@@ -1,0 +1,481 @@
+<!-- Base Template: templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Trading Robot Admin{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --secondary-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+            --light-bg: #F8F9FA;
+            --dark-bg: #2C3E50;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-color) !important;
+        }
+
+        .sidebar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #34495E 100%);
+            min-height: 100vh;
+            box-shadow: var(--card-shadow);
+            position: fixed;
+            width: 250px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            margin: 4px 16px;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #5DADE2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+        }
+
+        .stat-card.success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #58D68D 100%);
+        }
+
+        .stat-card.warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #F7DC6F 100%);
+        }
+
+        .stat-card.danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #F1948A 100%);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .table {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+
+        .table td {
+            vertical-align: middle;
+            border-color: #E9ECEF;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .status-active {
+            background: linear-gradient(45deg, var(--success-color), #58D68D);
+            color: white;
+        }
+
+        .status-expired {
+            background: linear-gradient(45deg, var(--danger-color), #F1948A);
+            color: white;
+        }
+
+        .status-inactive {
+            background: linear-gradient(45deg, #95A5A6, #BDC3C7);
+            color: white;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: var(--border-radius);
+            border: 2px solid #E9ECEF;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .modal-content {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #34495E 100%);
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #E9ECEF;
+            border-top: 5px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 250px;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+            max-width: 350px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container-fluid">
+            <button class="btn btn-link d-lg-none" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <i class="fas fa-robot me-2"></i>Trading Robot Admin
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>{{ user.username }}
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/admin/"><i class="fas fa-cog me-2"></i>Admin Panel</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/admin/logout/"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="p-4">
+            <h5 class="text-white mb-4">
+                <i class="fas fa-chart-line me-2"></i>Dashboard
+            </h5>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'dashboard' %}">
+                        <i class="fas fa-home me-2"></i>Overview
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/licenses/license/">
+                        <i class="fas fa-key me-2"></i>Licenses
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/configurations/tradingconfiguration/">
+                        <i class="fas fa-cogs me-2"></i>Configurations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/api/licenses/">
+                        <i class="fas fa-code me-2"></i>API
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/">
+                        <i class="fas fa-tools me-2"></i>Admin Panel
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show notification" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay d-none" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Sidebar toggle for mobile
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        });
+
+        // Auto-hide notifications after 5 seconds
+        setTimeout(() => {
+            const notifications = document.querySelectorAll('.notification');
+            notifications.forEach(notification => {
+                notification.classList.remove('show');
+            });
+        }, 5000);
+
+        // Loading overlay utility
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('d-none');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('d-none');
+        }
+
+        // CSRF token for AJAX requests
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        // API utility functions
+        const API = {
+            async get(url) {
+                showLoading();
+                try {
+                    const response = await fetch(url, {
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                    });
+                    return await response.json();
+                } finally {
+                    hideLoading();
+                }
+            },
+
+            async post(url, data) {
+                showLoading();
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: JSON.stringify(data),
+                    });
+                    return await response.json();
+                } finally {
+                    hideLoading();
+                }
+            },
+
+            async put(url, data) {
+                showLoading();
+                try {
+                    const response = await fetch(url, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: JSON.stringify(data),
+                    });
+                    return await response.json();
+                } finally {
+                    hideLoading();
+                }
+            },
+
+            async delete(url) {
+                showLoading();
+                try {
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                    });
+                    return response.ok;
+                } finally {
+                    hideLoading();
+                }
+            }
+        };
+
+        // Notification utility
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show notification`;
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 150);
+            }, 5000);
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
