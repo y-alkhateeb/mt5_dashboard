@@ -1,11 +1,16 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import ClientViewSet, LicenseViewSet
+# File: licenses/urls.py
 
-router = DefaultRouter()
-router.register(r'clients', ClientViewSet)
-router.register(r'licenses', LicenseViewSet)
+from django.urls import path
+from .views import BotValidationAPIView, APIInfoView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # Main validation endpoint for trading robots
+    path('validate/', BotValidationAPIView.as_view(), name='bot-validate'),
+    
+    # API information
+    path('info/', APIInfoView.as_view(), name='api-info'),
 ]
+
+# Available endpoints:
+# POST /api/validate/  - Bot license validation
+# GET  /api/info/      - API information

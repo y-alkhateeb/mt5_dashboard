@@ -1,112 +1,130 @@
+# File: configurations/models.py
+
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 class TradingConfiguration(models.Model):
     license = models.OneToOneField(
-        'licenses.License',  # ✅ String reference to avoid circular import
+        'licenses.License',
         on_delete=models.CASCADE,
         related_name='configuration'
     )
     
     # ═══ Symbol Validation ═══
-    allowed_symbol = models.CharField(
+    inp_AllowedSymbol = models.CharField(
         max_length=20,
-        default="EURUSD",
-        help_text="Allowed trading symbol"
+        default="US30",
+        help_text="Allowed Symbol (overridden by license)"
     )
-    strict_symbol_check = models.BooleanField(
+    inp_StrictSymbolCheck = models.BooleanField(
         default=True,
-        help_text="Enable strict symbol validation"
+        help_text="Enable Strict Symbol Validation (overridden by license)"
     )
     
     # ═══ Session Configuration ═══
-    inp_session_start = models.TimeField(
+    inp_SessionStart = models.CharField(
+        max_length=5,
         default="08:45",
-        help_text="Trading session start time (HH:MM)"
+        help_text="Session Start Time (overridden by license)"
     )
-    inp_session_end = models.TimeField(
+    inp_SessionEnd = models.CharField(
+        max_length=5,
         default="10:00",
-        help_text="Trading session end time (HH:MM)"
+        help_text="Session End Time (overridden by license)"
     )
     
     # ═══ Enhanced Fibonacci Levels ═══
-    inp_fib_level_1_1 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.10000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_1_1 = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.325,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Fibonacci Level 1.1 (overridden by license)"
     )
-    inp_fib_level_1_05 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.05000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_1_05 = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Fibonacci Level 1.05 (Buy Entry)"
     )
-    inp_fib_level_1_0 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.00000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_1_0 = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.0,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Fibonacci Level 1.0 (Session High)"
     )
-    inp_fib_level_primary_buy_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=0.95000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_PrimaryBuySL = models.DecimalField(
+        max_digits=8, decimal_places=5, default=-0.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Primary Buy Stop Loss Level"
     )
-    inp_fib_level_primary_sell_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.05000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_PrimarySellSL = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Primary Sell Stop Loss Level"
     )
-    inp_fib_level_hedge_buy = models.DecimalField(
-        max_digits=8, decimal_places=5, default=0.90000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_HedgeBuy = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Hedging Buy Entry Level"
     )
-    inp_fib_level_hedge_sell = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.10000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_HedgeSell = models.DecimalField(
+        max_digits=8, decimal_places=5, default=-0.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Hedging Sell Entry Level"
     )
-    inp_fib_level_hedge_buy_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=0.85000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_HedgeBuySL = models.DecimalField(
+        max_digits=8, decimal_places=5, default=0.0,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Hedging Buy Stop Loss Level"
     )
-    inp_fib_level_hedge_sell_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.15000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_HedgeSellSL = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.0,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Hedging Sell Stop Loss Level"
     )
-    inp_fib_level_0_0 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=0.00000,
-        validators=[MinValueValidator(-1.0), MaxValueValidator(1.0)]
+    inp_FibLevel_0_0 = models.DecimalField(
+        max_digits=8, decimal_places=5, default=0.0,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Fibonacci Level 0.0 (Session Low)"
     )
-    inp_fib_level_neg_05 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.05000,
-        validators=[MinValueValidator(-1.0), MaxValueValidator(1.0)]
+    inp_FibLevel_Neg_05 = models.DecimalField(
+        max_digits=8, decimal_places=5, default=-0.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Fibonacci Level -0.05 (Sell Entry)"
     )
-    inp_fib_level_neg_1 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.10000,
-        validators=[MinValueValidator(-1.0), MaxValueValidator(1.0)]
+    inp_FibLevel_Neg_1 = models.DecimalField(
+        max_digits=8, decimal_places=5, default=-0.325,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Fibonacci Level -0.325 (Sell TP)"
     )
-    inp_fib_level_hedge_buy_tp = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.20000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_HedgeBuyTP = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.3,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Hedging Buy Take Profit Level"
     )
-    inp_fib_level_hedge_sell_tp = models.DecimalField(
-        max_digits=8, decimal_places=5, default=0.80000,
-        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    inp_FibLevel_HedgeSellTP = models.DecimalField(
+        max_digits=8, decimal_places=5, default=-0.3,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Hedging Sell Take Profit Level"
     )
     
     # ═══ Timeout Configuration (Minutes) ═══
-    inp_primary_pending_timeout = models.PositiveIntegerField(
+    inp_PrimaryPendingTimeout = models.PositiveIntegerField(
         default=30,
         validators=[MinValueValidator(1), MaxValueValidator(1440)],
-        help_text="Primary pending order timeout in minutes"
+        help_text="Primary Order Pending Timeout (overridden by license)"
     )
-    inp_primary_position_timeout = models.PositiveIntegerField(
+    inp_PrimaryPositionTimeout = models.PositiveIntegerField(
         default=60,
         validators=[MinValueValidator(1), MaxValueValidator(1440)],
-        help_text="Primary position timeout in minutes"
+        help_text="Primary Position Timeout"
     )
-    inp_hedging_pending_timeout = models.PositiveIntegerField(
-        default=45,
+    inp_HedgingPendingTimeout = models.PositiveIntegerField(
+        default=30,
         validators=[MinValueValidator(1), MaxValueValidator(1440)],
-        help_text="Hedging pending order timeout in minutes"
+        help_text="Hedging Order Pending Timeout"
     )
-    inp_hedging_position_timeout = models.PositiveIntegerField(
-        default=90,
+    inp_HedgingPositionTimeout = models.PositiveIntegerField(
+        default=60,
         validators=[MinValueValidator(1), MaxValueValidator(1440)],
-        help_text="Hedging position timeout in minutes"
+        help_text="Hedging Position Timeout"
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
