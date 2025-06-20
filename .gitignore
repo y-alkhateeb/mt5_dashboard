@@ -3,6 +3,8 @@ reset.txt
 *.pyc
 *.pyo
 *.pyd
+*.DS_Store
+explore_db.py
 __pycache__/
 *.db
 # Ignore migrations
