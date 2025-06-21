@@ -7,8 +7,8 @@ from .settings import *
 # Railway environment detection
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-change-this')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
-
+# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
+ALLOWED_HOSTS = "http://production-europe-west4-drams3a.railway-registry.com/"
 # Railway PostgreSQL Database with fallback
 if os.getenv('DATABASE_URL'):
     DATABASES = {
@@ -64,7 +64,8 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
 # CORS settings
-RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+# RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+RAILWAY_PUBLIC_DOMAIN = "http://production-europe-west4-drams3a.railway-registry.com/"
 if RAILWAY_PUBLIC_DOMAIN:
     CORS_ALLOWED_ORIGINS = [
         f"https://{RAILWAY_PUBLIC_DOMAIN}",
