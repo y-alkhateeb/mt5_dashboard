@@ -47,3 +47,12 @@ config.ini
 # Ignore backup files
 *.bak
 # Ignore coverage reports
+# Add these lines to your existing .gitignore
+
+# Deployment files
+deployment/
+*.zip
+trading-robot-admin-*.zip
+
+# SmarterASP.net specific
+web.config.backup

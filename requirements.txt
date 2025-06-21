@@ -1,7 +1,26 @@
+# Core Django
 Django==4.2.7
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 python-decouple==3.8
+
+# Database & Railway
+psycopg2-binary==2.9.7
+dj-database-url==2.1.0
+
+# Static files & media
 Pillow==10.1.0
+whitenoise==6.6.0
+
+# UI & Forms
 django-crispy-forms==2.1
 crispy-bootstrap5==0.7
+
+# Extensions
+django-extensions==3.2.3
+
+# Production server
+gunicorn==21.2.0
+
+# Optional: Redis for caching
+redis==5.0.1
