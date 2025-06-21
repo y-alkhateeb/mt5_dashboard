@@ -113,33 +113,3 @@ class BotValidationAPIView(APIView):
                 'success': False,
                 'message': 'Internal server error during license validation'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-class APIInfoView(APIView):
-    """
-    📖 API Information
-    """
-    permission_classes = [AllowAny]
-    
-    def get(self, request):
-        return Response({
-            'api_name': 'Trading Robot License Validation API',
-            'version': '2.0',
-            'available_endpoints': {
-                'validate': {
-                    'url': '/api/validate/',
-                    'method': 'POST',
-                    'description': 'Validate trading bot license and get configuration'
-                },
-                'info': {
-                    'url': '/api/info/',
-                    'method': 'GET',
-                    'description': 'API information'
-                }
-            },
-            'admin_panel': '/admin/',
-            'notes': [
-                'All license management is done through Django Admin',
-                'Only validation functionality is provided via API',
-                'No sensitive information is returned'
-            ]
-        })

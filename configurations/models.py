@@ -136,3 +136,4 @@ class TradingConfiguration(models.Model):
     
     def __str__(self):
         return f"Config for {self.license.client.full_name} ({self.license.license_key[:8]}...)"
+    

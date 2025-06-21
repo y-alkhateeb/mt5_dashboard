@@ -67,3 +67,24 @@ class BotValidationResponseSerializer(serializers.Serializer):
     # Usage info
     usage_count = serializers.IntegerField(required=False)
     last_used_at = serializers.DateTimeField(required=False)
+
+class BasicLicenseSerializer(serializers.ModelSerializer):
+    """
+    Basic license serializer for admin API - excludes sensitive information
+    """
+    status = serializers.ReadOnlyField()
+    client_name = serializers.CharField(source='client.full_name', read_only=True)
+    
+    class Meta:
+        model = License
+        fields = [
+            'id',
+            'license_key', 
+            'client_name',
+            'account_trade_mode',
+            'expires_at',
+            'is_active',
+            'status',
+            'created_at'
+        ]
+        read_only_fields = ['license_key', 'created_at']
