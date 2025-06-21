@@ -64,6 +64,4 @@ railway.toml
 app.py
 web.config
 prepare_deployment.sh
-requirements-smarterasp.txt
-trading_admin/settings_smarterasp.py
 web.config.backup
