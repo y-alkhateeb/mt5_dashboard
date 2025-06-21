@@ -7,7 +7,13 @@ from .settings import *
 # Railway environment detection
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-change-this')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
+
+# FIXED: Use the CORRECT Railway domain from your networking settings
+ALLOWED_HOSTS = [
+    'tradingadmin-production.up.railway.app',  # ← Your actual Railway domain
+    '*.up.railway.app', 
+    '*.railway.app'
+]
 
 # Railway PostgreSQL Database with fallback
 if os.getenv('DATABASE_URL'):
@@ -63,14 +69,11 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-# CORS settings
-RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
-if RAILWAY_PUBLIC_DOMAIN:
-    CORS_ALLOWED_ORIGINS = [
-        f"https://{RAILWAY_PUBLIC_DOMAIN}",
-    ]
-else:
-    CORS_ALLOW_ALL_ORIGINS = True  # For development
+# FIXED: CORS settings with correct Railway domain
+CORS_ALLOWED_ORIGINS = [
+    'https://tradingadmin-production.up.railway.app',  # ← Your actual Railway domain
+    'http://tradingadmin-production.up.railway.app',   # For development if needed
+]
 
 # Logging
 LOGGING = {
@@ -104,3 +107,4 @@ print(f"   DEBUG: {DEBUG}")
 print(f"   DATABASE: {'PostgreSQL' if os.getenv('DATABASE_URL') else 'SQLite Fallback'}")
 print(f"   STATIC_ROOT: {STATIC_ROOT}")
 print(f"   ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+print(f"   CORRECT_DOMAIN: tradingadmin-production.up.railway.app")
