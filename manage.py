@@ -1,12 +1,15 @@
-#!/usr/bin/env python
-"""Django's command-line utility for administrative tasks."""
 import os
 import sys
 
 if __name__ == '__main__':
-    """Run administrative tasks."""
-    # Default to Railway settings for production deployment
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_railway')
+    # Smart settings detection
+    if os.getenv('RAILWAY_ENVIRONMENT'):
+        # On Railway, use Railway settings
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_railway')
+    else:
+        # Local development, use local settings
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings')
+    
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
