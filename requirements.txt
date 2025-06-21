@@ -22,5 +22,8 @@ django-extensions==3.2.3
 # Production server
 gunicorn==21.2.0
 
-# Optional: Redis for caching
+# Optional: Redis for caching (Railway provides Redis)
 redis==5.0.1
+
+# Development tools (optional, but helpful)
+django-debug-toolbar==4.2.0

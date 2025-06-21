@@ -5,7 +5,8 @@ import sys
 
 if __name__ == '__main__':
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings')
+    # Default to Railway settings for production deployment
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_railway')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

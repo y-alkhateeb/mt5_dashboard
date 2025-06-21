@@ -56,3 +56,14 @@ trading-robot-admin-*.zip
 
 # SmarterASP.net specific
 web.config.backup
+# Railway specific
+.railway/
+railway.toml
+
+# SmarterASP.net files (removed)
+app.py
+web.config
+prepare_deployment.sh
+requirements-smarterasp.txt
+trading_admin/settings_smarterasp.py
+web.config.backup
