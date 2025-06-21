@@ -65,8 +65,8 @@ class TradingConfigurationAdmin(admin.ModelAdmin):
             return self.readonly_fields + ('license',)
         return self.readonly_fields
     
-    class Media:
-        css = {
-            'all': ('admin/css/custom_admin.css',)
-        }
-        js = ('admin/js/custom_admin.js',)
+    # class Media:
+    #     css = {
+    #         'all': ('admin/css/custom_admin.css',)
+    #     }
+    #     js = ('admin/js/custom_admin.js',)
