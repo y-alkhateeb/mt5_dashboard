@@ -58,16 +58,21 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Security settings for Railway
-SECURE_SSL_REDIRECT = not DEBUG
-SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
-SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
-SECURE_HSTS_PRELOAD = not DEBUG
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+# FIXED: Security settings for Railway - Disable SSL redirect to prevent redirect loop
+# Railway handles HTTPS at the proxy level, so Django shouldn't force redirects
+SECURE_SSL_REDIRECT = False  # ← FIXED: Disable to prevent redirect loop
+SECURE_HSTS_SECONDS = 0  # ← FIXED: Disable HSTS for Railway
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False  # ← FIXED: Disable for Railway
+SECURE_HSTS_PRELOAD = False  # ← FIXED: Disable for Railway
+SESSION_COOKIE_SECURE = not DEBUG  # Keep this for cookie security
+CSRF_COOKIE_SECURE = not DEBUG  # Keep this for CSRF security
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+
+# Alternative approach - Use Railway's headers to detect HTTPS
+USE_TZ = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # FIXED: CORS settings with correct Railway domain
 CORS_ALLOWED_ORIGINS = [
@@ -107,4 +112,5 @@ print(f"   DEBUG: {DEBUG}")
 print(f"   DATABASE: {'PostgreSQL' if os.getenv('DATABASE_URL') else 'SQLite Fallback'}")
 print(f"   STATIC_ROOT: {STATIC_ROOT}")
 print(f"   ALLOWED_HOSTS: {ALLOWED_HOSTS}")
-print(f"   CORRECT_DOMAIN: tradingadmin-production.up.railway.app")
+print(f"   SECURE_SSL_REDIRECT: {SECURE_SSL_REDIRECT}")
+print(f"   RAILWAY_DOMAIN: tradingadmin-production.up.railway.app")
