@@ -5,10 +5,9 @@ reset.txt
 *.pyd
 *.DS_Store
 explore_db.py
-__pycache__/
+migrations/*.pyc"
+migrations/__pycache__/
 *.db
-# Ignore migrations
-migrations/
 # Ignore environment variables
 .env
 # Ignore IDE specific files

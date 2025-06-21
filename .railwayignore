@@ -21,5 +21,6 @@ nginx*.conf
 explore_db.py
 deployment*/
 *.zip
-migrations/
+migrations/*.pyc"
+migrations/__pycache__/
 .gitignore
