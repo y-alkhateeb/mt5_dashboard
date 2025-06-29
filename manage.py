@@ -5,14 +5,17 @@ import sys
 
 if __name__ == '__main__':
     # Smart settings detection for multiple platforms
-    if os.getenv('RENDER'):
-        # On Render, use Render settings
+    if os.getenv('RENDER_EXTERNAL_HOSTNAME'):
+        # On Render, use Render settings (Render sets RENDER_EXTERNAL_HOSTNAME automatically)
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_render')
         print("🚀 Using Render settings")
     elif os.getenv('RAILWAY_ENVIRONMENT'):
         # On Railway, use Railway settings
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_railway')
         print("🚂 Using Railway settings")
+    elif os.getenv('DJANGO_SETTINGS_MODULE'):
+        # Use explicitly set settings module
+        print(f"⚙️ Using explicitly set settings: {os.getenv('DJANGO_SETTINGS_MODULE')}")
     else:
         # Local development, use local settings
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings')
