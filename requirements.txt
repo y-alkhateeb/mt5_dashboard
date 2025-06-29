@@ -11,3 +11,6 @@ crispy-bootstrap5==0.7
 django-extensions==3.2.3
 gunicorn==21.2.0
 redis==5.0.1
+
+# Optional: Additional rate limiting (if DRF throttling is not sufficient)
+# django-ratelimit==4.1.0

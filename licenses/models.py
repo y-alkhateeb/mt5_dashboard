@@ -28,6 +28,10 @@ class Client(models.Model):
     class Meta:
         ordering = ['last_name', 'first_name']
         unique_together = ['first_name', 'last_name', 'country']
+        indexes = [
+            models.Index(fields=['last_name', 'first_name']),
+            models.Index(fields=['country']),
+        ]
     
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.country})"
@@ -58,12 +62,14 @@ class License(models.Model):
         help_text="Client who owns this license"
     )
     
-    # ✅ NEW: Trading Configuration Assignment
+    # Trading Configuration Assignment (ForeignKey allows sharing)
     trading_configuration = models.ForeignKey(
         'configurations.TradingConfiguration',
         on_delete=models.PROTECT,  # Prevent deletion of configs in use
         related_name='licenses',
-        help_text="Trading configuration for this license"
+        help_text="Trading configuration for this license",
+        null=True,  # Temporary null for migration
+        blank=True
     )
     
     # PRIMARY IDENTIFIER: System Hash (Trading Account Identifier)
@@ -82,7 +88,11 @@ class License(models.Model):
     )
     
     # Account Hash History (JSON field to store previous account hashes)
-    account_hash_history = models.JSONField(default=default_account_hash_history, blank=True)
+    account_hash_history = models.JSONField(
+        default=default_account_hash_history, 
+        blank=True,
+        help_text="History of account hash changes with timestamps"
+    )
     
     # Other Information
     broker_server = models.CharField(
@@ -119,6 +129,16 @@ class License(models.Model):
         help_text="Number of times this license has been used"
     )
     
+    # Enhanced Usage Analytics
+    daily_usage_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of uses today (resets daily)"
+    )
+    last_reset_date = models.DateField(
+        auto_now_add=True,
+        help_text="Last date when daily usage was reset"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -131,6 +151,14 @@ class License(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['license_key']),
+            models.Index(fields=['system_hash']),
+            models.Index(fields=['expires_at']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['account_trade_mode']),
+            models.Index(fields=['last_used_at']),
+        ]
     
     def __str__(self):
         config_name = self.trading_configuration.name if self.trading_configuration else "No Config"
@@ -146,7 +174,13 @@ class License(models.Model):
         return timezone.now() > self.expires_at
     
     @property
+    def is_expiring_soon(self):
+        """Check if license expires within 30 days"""
+        return timezone.now() + timedelta(days=30) > self.expires_at
+    
+    @property
     def status(self):
+        """Enhanced status with more granular states"""
         if not self.is_active:
             return "Inactive"
         elif self.is_expired:
@@ -155,13 +189,15 @@ class License(models.Model):
             return "Not Bound"
         elif not self.account_hash:
             return "Bound - No Login"
+        elif self.is_expiring_soon:
+            return "Expiring Soon"
         else:
             return "Active"
     
     @property
     def is_valid(self):
         """Check if license is valid for trading"""
-        return self.is_active and not self.is_expired
+        return self.is_active and not self.is_expired and self.trading_configuration is not None
     
     @property
     def is_account_bound(self):
@@ -178,9 +214,20 @@ class License(models.Model):
         """Get number of times account hash was changed"""
         return len(self.account_hash_history)
     
+    def reset_daily_usage_if_needed(self):
+        """Reset daily usage count if it's a new day"""
+        today = timezone.now().date()
+        if self.last_reset_date < today:
+            self.daily_usage_count = 0
+            self.last_reset_date = today
+            self.save(update_fields=['daily_usage_count', 'last_reset_date'])
+    
     def bind_account(self, system_hash, account_trade_mode, broker_server=None, account_hash=None):
         """Bind license to a trading account on first use"""
         now = timezone.now()
+        
+        # Reset daily usage if needed
+        self.reset_daily_usage_if_needed()
         
         if not self.first_used_at:
             self.first_used_at = now
@@ -217,6 +264,7 @@ class License(models.Model):
         
         self.last_used_at = now
         self.usage_count += 1
+        self.daily_usage_count += 1
         self.save()
     
     def validate_system_hash(self, system_hash):
