@@ -70,11 +70,7 @@ class License(models.Model):
     )
     
     # Account Hash History (JSON field to store previous account hashes)
-    account_hash_history = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="History of account hash changes with timestamps"
-    )
+    account_hash_history = models.JSONField(default=default_account_hash_history, blank=True)
     
     # Other Information
     broker_server = models.CharField(

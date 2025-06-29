@@ -134,6 +134,11 @@ class TradingConfiguration(models.Model):
         verbose_name = 'Trading Configuration'
         verbose_name_plural = 'Trading Configurations'
     
+    def default_account_hash_history():
+        """Return empty list for account hash history"""
+        return []
+
+
     def __str__(self):
         return f"Config for {self.license.client.full_name} ({self.license.license_key[:8]}...)"
     
