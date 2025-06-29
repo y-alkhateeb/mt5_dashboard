@@ -4,8 +4,8 @@ services:
     name: trading-robot-admin
     runtime: python3
     buildCommand: |
-      pip install --upgrade pip &&
-      pip install -r requirements.txt &&
+      pip install --upgrade pip --root-user-action=ignore &&
+      pip install -r requirements.txt --root-user-action=ignore &&
       python manage.py collectstatic --noinput &&
       python manage.py migrate --noinput
     startCommand: |
