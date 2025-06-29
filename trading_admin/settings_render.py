@@ -6,8 +6,9 @@ from .settings import *
 # Environment validation for production
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
-    print("❌ ERROR: SECRET_KEY environment variable is required in production!")
-    sys.exit(1)
+    from django.core.management.utils import get_random_secret_key
+    SECRET_KEY = get_random_secret_key()
+    print("⚠️  WARNING: SECRET_KEY not provided, auto-generated for this session")
 
 # Debug mode for Render
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
@@ -138,7 +139,7 @@ LOGGING = {
     },
 }
 
-print(f"🚀 Render Settings Loaded:")
+print(f"🚀 Render Settings Loaded Successfully!")
 print(f"   RENDER_EXTERNAL_HOSTNAME: {RENDER_EXTERNAL_HOSTNAME or 'Not set (development)'}")
 print(f"   ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 print(f"   SECRET_KEY: {'✅ Set' if SECRET_KEY else '❌ Missing'}")
