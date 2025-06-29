@@ -1,13 +1,13 @@
 services:
-  # Web Service (Django Trading Robot Admin)
+  # Web Service (Django Trading Robot Admin) - Native Python
   - type: web
     name: trading-robot-admin
     runtime: python3
-    region: oregon  # Choose region closest to your users
+    region: oregon
     
-    # Build command - runs once during deployment
+    # Build command - uses native Python buildpack
     buildCommand: |
-      echo "🚀 Starting build process..."
+      echo "🐍 Using Render native Python buildpack"
       pip install --upgrade pip
       pip install -r requirements.txt
       echo "📦 Dependencies installed"
@@ -15,15 +15,17 @@ services:
       echo "📁 Static files collected"
       python manage.py migrate --noinput
       echo "💾 Database migrations applied"
+      python manage.py setup_admin --username admin --password admin123
+      echo "👤 Admin user created"
       echo "✅ Build completed successfully"
     
-    # Start command - runs every time the service starts
+    # Start command - runs the Django app
     startCommand: |
       echo "🚀 Starting Trading Robot Admin..."
-      gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 50 --access-logfile - --error-logfile -
+      gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --access-logfile - --error-logfile -
     
     # Service configuration
-    plan: starter  # Free tier - upgrade for production
+    plan: starter
     
     # Environment variables
     envVars:
@@ -32,28 +34,17 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: trading_admin.settings_render
       - key: SECRET_KEY
-        generateValue: true  # Render will auto-generate
+        generateValue: true
       - key: DEBUG
         value: false
-      - key: WEB_CONCURRENCY
-        value: 3
     
-    # Health check endpoint
+    # Health check
     healthCheckPath: /api/health/
-    
-    # Disk storage for logs
-    disk:
-      name: logs
-      mountPath: /opt/render/project/src/logs
-      sizeGB: 1
 
   # PostgreSQL Database
   - type: pgsql
     name: trading-robot-db
-    region: oregon  # Same region as web service
+    region: oregon
     databaseName: trading_admin
     user: trading_admin_user
-    plan: starter  # Free tier - 1GB storage, expires after 90 days without upgrade
-    
-    # Database configuration
-    postgresMajorVersion: 15
+    plan: starter
