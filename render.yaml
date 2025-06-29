@@ -1,62 +1,40 @@
-# render.yaml - Docker Configuration for Trading Robot Admin
-# This configuration uses the custom Dockerfile for deployment
-
 services:
-  # Web Service (Django Trading Robot Admin) - Docker Build
+  # PostgreSQL Database (CREATE THIS FIRST)
+  - type: pgsql
+    name: trading-robot-db
+    region: oregon
+    databaseName: trading_admin
+    user: trading_admin_user
+    plan: starter
+
+  # Web Service (CREATE AFTER DATABASE)
   - type: web
     name: trading-robot-admin
-    runtime: docker  # Use Docker instead of native Python
-    region: oregon   # Choose region closest to your users
+    runtime: docker
+    region: oregon  # SAME REGION AS DATABASE
     
-    # Docker build configuration
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    
-    # No buildCommand needed - Docker handles everything
-    # Docker entrypoint handles migrations, admin setup, etc.
-    
-    # Service configuration
-    plan: starter  # Free tier - upgrade for production
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements.txt
-      python manage.py collectstatic --noinput
-      python manage.py reset_and_setup \
-        --username yousef \
-        --password admin123123 \
-        --email admin@example.com \
-        --skip-migrations \
-        --force
-    
-    # Environment variables
+    # 🔥 CRITICAL: Add these environment variables
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: trading_admin.settings_render
       - key: SECRET_KEY
-        generateValue: true  # Render auto-generates
+        generateValue: true
       - key: DEBUG
         value: false
-      - key: WEB_CONCURRENCY
-        value: 3
-      - key: PORT
-        value: 10000
+      # 🚀 THIS IS THE KEY - Connect to your database:
+      - key: DATABASE_URL
+        fromService:
+          type: pgsql
+          name: trading-robot-db
+          property: connectionString
     
-    # Health check endpoint
-    healthCheckPath: /api/health/
-    
-    # Disk storage for logs and media
-    disk:
-      name: app-storage
-      mountPath: /app/logs
-      sizeGB: 1
-
-  # PostgreSQL Database
-  - type: pgsql
-    name: trading-robot-db
-    region: oregon  # Same region as web service
-    databaseName: trading_admin
-    user: trading_admin_user
-    plan: starter  # Free tier - 1GB storage
-    
-    # Database configuration
-    postgresMajorVersion: 15
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate --noinput
+      python manage.py reset_and_setup \
+        --username yousef \
+        --password admin123123 \
+        --email admin@example.com \
+        --force
