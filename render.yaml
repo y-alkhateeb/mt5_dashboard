@@ -31,23 +31,3 @@ services:
     databaseName: trading_admin
     user: trading_admin_user
     plan: starter  # Free tier, upgrade for production
-    
-# Environment Groups (optional, for organizing env vars)
-envVarGroups:
-  - name: django-config
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: trading_admin.settings_render
-      - key: DEBUG
-        value: false
-      - key: SECRET_KEY
-        generateValue: true
-        
-  - name: security-config
-    envVars:
-      - key: SECURE_SSL_REDIRECT
-        value: true
-      - key: SESSION_COOKIE_SECURE
-        value: true
-      - key: CSRF_COOKIE_SECURE
-        value: true

@@ -55,3 +55,10 @@ app.py
 web.config
 prepare_deployment.sh
 web.config.backup
+
+# Render specific
+staticfiles/
+.render/
+
+# Render deployment files
+render.toml
