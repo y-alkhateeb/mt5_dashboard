@@ -4,20 +4,21 @@ services:
     name: trading-robot-admin
     runtime: python3
     buildCommand: |
-      pip install --upgrade pip --root-user-action=ignore &&
-      pip install -r requirements.txt --root-user-action=ignore &&
+      pip install --upgrade pip &&
+      pip install -r requirements.txt &&
       python manage.py collectstatic --noinput &&
-      python manage.py migrate --noinput &&
-      python manage.py createadmin &&
-      python manage.py create_sample_data --clean --clients 3 --licenses-per-client 2
+      python manage.py migrate --noinput
     startCommand: |
+      python manage.py migrate --noinput &&
       gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 50
-    plan: starter
+    plan: starter  # Can upgrade to standard/pro for production
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.5
       - key: DJANGO_SETTINGS_MODULE
         value: trading_admin.settings_render
+      - key: SECRET_KEY
+        generateValue: true
       - key: DEBUG
         value: false
       - key: WEB_CONCURRENCY
@@ -29,4 +30,4 @@ services:
     name: trading-robot-db
     databaseName: trading_admin
     user: trading_admin_user
-    plan: starter
+    plan: starter  # Free tier, upgrade for production
