@@ -1,5 +1,5 @@
-# Dockerfile for Trading Robot Admin - Render.com Optimized
-# Multi-stage build for smaller image size and better security
+# Dockerfile for Trading Robot Admin - Pure Docker Deployment
+# Optimized for Render.com
 
 # ============================================================================
 # Build Stage - Install dependencies and prepare application
@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create and set working directory
@@ -39,11 +40,13 @@ FROM python:3.11.9-slim as production
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=trading_admin.settings_render \
-    PORT=10000
+    PORT=10000 \
+    WEB_CONCURRENCY=3
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -60,11 +63,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY . .
 
-# Create necessary directories and copy entrypoint
+# Create necessary directories
 RUN mkdir -p logs staticfiles media
-
-# Copy and set up entrypoint script
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
 # Set permissions
 RUN chown -R django:django /app && \
@@ -73,15 +73,12 @@ RUN chown -R django:django /app && \
 # Switch to non-root user
 USER django
 
-# Collect static files (run during build for better performance)
-RUN python manage.py collectstatic --noinput --settings=trading_admin.settings_render
-
 # Expose port (Render uses $PORT environment variable)
 EXPOSE $PORT
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:${PORT:-10000}/api/health/', timeout=30)" || exit 1
+    CMD curl -f http://localhost:${PORT:-10000}/api/health/ || exit 1
 
 # Set entrypoint
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
