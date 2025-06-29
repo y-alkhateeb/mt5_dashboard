@@ -1,0 +1,53 @@
+services:
+  # Web Service (Django App)
+  - type: web
+    name: trading-robot-admin
+    runtime: python3
+    buildCommand: |
+      pip install --upgrade pip &&
+      pip install -r requirements.txt &&
+      python manage.py collectstatic --noinput &&
+      python manage.py migrate --noinput
+    startCommand: |
+      python manage.py migrate --noinput &&
+      gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 50
+    plan: starter  # Can upgrade to standard/pro for production
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.5
+      - key: DJANGO_SETTINGS_MODULE
+        value: trading_admin.settings_render
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: WEB_CONCURRENCY
+        value: 3
+    healthCheckPath: /api/health/
+    
+  # PostgreSQL Database
+  - type: pgsql
+    name: trading-robot-db
+    databaseName: trading_admin
+    user: trading_admin_user
+    plan: starter  # Free tier, upgrade for production
+    
+# Environment Groups (optional, for organizing env vars)
+envVarGroups:
+  - name: django-config
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: trading_admin.settings_render
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+        
+  - name: security-config
+    envVars:
+      - key: SECURE_SSL_REDIRECT
+        value: true
+      - key: SESSION_COOKIE_SECURE
+        value: true
+      - key: CSRF_COOKIE_SECURE
+        value: true
