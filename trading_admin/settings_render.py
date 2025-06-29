@@ -9,24 +9,23 @@ if not SECRET_KEY:
     print("❌ ERROR: SECRET_KEY environment variable is required in production!")
     sys.exit(1)
 
-# Debug mode for Railway
+# Debug mode for Render
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-# Railway domain configuration
-RAILWAY_STATIC_URL = os.getenv('RAILWAY_STATIC_URL')
-RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+# Render domain configuration
+RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
 
-if RAILWAY_PUBLIC_DOMAIN:
-    # Production - use Railway domain
+if RENDER_EXTERNAL_HOSTNAME:
+    # Production - use Render domain
     ALLOWED_HOSTS = [
-        RAILWAY_PUBLIC_DOMAIN,
-        '*.railway.app',
+        RENDER_EXTERNAL_HOSTNAME,
+        '*.onrender.com',
         'localhost',
         '127.0.0.1'
     ]
     # Dynamic CORS origins for production
     CORS_ALLOWED_ORIGINS = [
-        f'https://{RAILWAY_PUBLIC_DOMAIN}',
+        f'https://{RENDER_EXTERNAL_HOSTNAME}',
     ]
     CORS_ALLOW_ALL_ORIGINS = False
 else:
@@ -34,7 +33,7 @@ else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
     CORS_ALLOW_ALL_ORIGINS = True
 
-# Database configuration using dj-database-url (Railway provides DATABASE_URL)
+# Database configuration using dj-database-url (Render provides DATABASE_URL)
 if os.getenv('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.parse(
@@ -52,15 +51,15 @@ else:
         }
     }
 
-# Static files configuration for Railway
+# Static files configuration for Render
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Use WhiteNoise for static files (perfect for Railway)
+# Use WhiteNoise for static files (perfect for Render)
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Security settings for Railway
+# Security settings for Render
 SECURE_SSL_REDIRECT = not DEBUG
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
@@ -76,7 +75,7 @@ CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 
-# Cache configuration for Railway (using local memory)
+# Cache configuration for Render (using local memory)
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -95,7 +94,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'bot_validation': '30/minute',  # Conservative limit for bot validation
 }
 
-# Logging configuration for Railway
+# Logging configuration for Render
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -139,10 +138,10 @@ LOGGING = {
     },
 }
 
-print(f"🚂 Railway Settings Loaded:")
-print(f"   RAILWAY_PUBLIC_DOMAIN: {RAILWAY_PUBLIC_DOMAIN or 'Not set (development)'}")
+print(f"🚀 Render Settings Loaded:")
+print(f"   RENDER_EXTERNAL_HOSTNAME: {RENDER_EXTERNAL_HOSTNAME or 'Not set (development)'}")
 print(f"   ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 print(f"   SECRET_KEY: {'✅ Set' if SECRET_KEY else '❌ Missing'}")
 print(f"   DEBUG: {DEBUG}")
-print(f"   DATABASE: {'✅ Railway PostgreSQL' if os.getenv('DATABASE_URL') else '❌ Local SQLite'}")
+print(f"   DATABASE: {'✅ Render PostgreSQL' if os.getenv('DATABASE_URL') else '❌ Local SQLite'}")
 print(f"   STATIC_ROOT: {STATIC_ROOT}")
