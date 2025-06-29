@@ -12,13 +12,14 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 else:
     SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-for-development')
 
-# ✅ FIXED: Dynamic ALLOWED_HOSTS configuration
-RAILWAY_DOMAIN = os.getenv('RAILWAY_STATIC_URL')
+# ✅ FIXED: Correct environment variable for Railway domain
+RAILWAY_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+
 if RAILWAY_DOMAIN:
     # Production - use Railway domain
     ALLOWED_HOSTS = [
         RAILWAY_DOMAIN,
-        '*.up.railway.app', 
+        '*.up.railway.app',
         '*.railway.app'
     ]
     # Dynamic CORS origins for production
@@ -31,34 +32,29 @@ else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
     CORS_ALLOW_ALL_ORIGINS = True
 
-# ✅ FIXED: Database configuration using dj-database-url
+# Database configuration using dj-database-url
 if os.getenv('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
     }
-else:
-    # Keep original database settings for local development
-    pass
 
-# ✅ FIXED: Static files configuration for Railway
+# Static files configuration
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Use WhiteNoise for static files
+# Use WhiteNoise
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# ✅ FIXED: Security settings for Railway
+# Security settings
 DEBUG = False
-
-# Security settings appropriate for Railway
 SECURE_SSL_REDIRECT = False  # Railway handles SSL termination
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_HSTS_SECONDS = 0  # Railway handles this
+SECURE_HSTS_SECONDS = 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 SECURE_HSTS_PRELOAD = False
 
-# ✅ FIXED: Logging configuration
+# Logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
