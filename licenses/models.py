@@ -10,6 +10,10 @@ def generate_license_key():
     """Generate a unique license key"""
     return str(uuid.uuid4()).replace('-', '')
 
+def default_account_hash_history():
+    """Return empty list for account hash history"""
+    return []
+
 class Client(models.Model):
     """Client information for license management"""
     first_name = models.CharField(max_length=50, help_text="Client's first name")
@@ -70,6 +74,7 @@ class License(models.Model):
     )
     
     # Account Hash History (JSON field to store previous account hashes)
+    # ✅ FIXED: Use callable function for default instead of undefined function
     account_hash_history = models.JSONField(default=default_account_hash_history, blank=True)
     
     # Other Information
