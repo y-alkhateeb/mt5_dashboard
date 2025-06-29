@@ -30,10 +30,6 @@ class Command(BaseCommand):
         # Sample clients data
         clients_data = [
             {'first_name': 'John', 'last_name': 'Smith', 'country': 'United States', 'email': 'john@example.com'},
-            {'first_name': 'Maria', 'last_name': 'Garcia', 'country': 'Spain', 'email': 'maria@example.com'},
-            {'first_name': 'Ahmed', 'last_name': 'Hassan', 'country': 'Egypt', 'email': 'ahmed@example.com'},
-            {'first_name': 'Li', 'last_name': 'Chen', 'country': 'China', 'email': 'li@example.com'},
-            {'first_name': 'Hans', 'last_name': 'Mueller', 'country': 'Germany', 'email': 'hans@example.com'},
         ]
         
         for i, client_data in enumerate(clients_data):
@@ -50,23 +46,6 @@ class Command(BaseCommand):
             
             if client_created:
                 self.stdout.write(f'✅ Created client: {client.full_name}')
-            
-            # Create license for client if it doesn't exist
-            if not client.licenses.exists():
-                license_obj = License.objects.create(
-                    client=client,
-                    account_trade_mode=i % 3,  # Mix of demo, restricted, live
-                    expires_at=timezone.now() + timedelta(days=365),
-                    is_active=True,
-                    created_by=admin_user
-                )
-                
-                # ✅ REMOVED: Manual configuration creation - signal handles this!
-                # Configuration is created automatically by the signal
-                
-                self.stdout.write(f'✅ Created license {license_obj.license_key[:8]}... for {client.full_name}')
-            else:
-                self.stdout.write(f'ℹ️  License already exists for {client.full_name}')
         
         # Show summary
         total_clients = Client.objects.count()
