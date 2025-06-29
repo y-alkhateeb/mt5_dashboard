@@ -1,12 +1,14 @@
 """
 Production settings for Render.com deployment
-Optimized for Trading Robot Admin System
+Optimized for Trading Robot Admin System - FIXED VERSION
 """
 
 import os
 import sys
 import dj_database_url
 from django.core.management.utils import get_random_secret_key
+
+# Import base settings
 from .settings import *
 
 # ============================================================================
@@ -68,15 +70,27 @@ else:
     print("⚠️  Using SQLite fallback - ensure DATABASE_URL is set in production")
 
 # ============================================================================
-# STATIC FILES CONFIGURATION (WhiteNoise)
+# STATIC FILES CONFIGURATION (WhiteNoise) - FIXED
 # ============================================================================
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# WhiteNoise configuration for serving static files
-MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# FIX 1: Ensure MIDDLEWARE is a list before modifying
+MIDDLEWARE = list(MIDDLEWARE) if isinstance(MIDDLEWARE, tuple) else MIDDLEWARE
+# Insert WhiteNoise middleware early in the middleware stack
+if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
+# FIX 2: Use modern Django 4.2+ STORAGES setting instead of deprecated STATICFILES_STORAGE
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Additional static files directories
 STATICFILES_DIRS = [
@@ -123,19 +137,34 @@ CACHES = {
 }
 
 # ============================================================================
-# API RATE LIMITING (Enhanced for production)
+# API RATE LIMITING (Enhanced for production) - FIXED
 # ============================================================================
+
+# FIX 3: Safely update REST_FRAMEWORK settings
+if 'REST_FRAMEWORK' not in locals():
+    REST_FRAMEWORK = {}
+
+# Ensure REST_FRAMEWORK is a dictionary
+if not isinstance(REST_FRAMEWORK, dict):
+    REST_FRAMEWORK = {}
 
 # Enhanced rate limiting for production
-REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
-    'anon': '100/hour',              # Anonymous users
-    'user': '1000/hour',             # Authenticated admin users
-    'bot_validation': '60/minute',   # Bot validation endpoint
-}
+REST_FRAMEWORK.update({
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',              # Anonymous users
+        'user': '1000/hour',             # Authenticated admin users
+        'bot_validation': '60/minute',   # Bot validation endpoint
+    }
+})
 
 # ============================================================================
-# LOGGING CONFIGURATION
+# LOGGING CONFIGURATION - FIXED
 # ============================================================================
+
+# FIX 4: Ensure logs directory exists
+import os
+logs_dir = os.path.join(BASE_DIR, 'logs')
+os.makedirs(logs_dir, exist_ok=True)
 
 LOGGING = {
     'version': 1,
@@ -159,7 +188,7 @@ LOGGING = {
         'file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': 'logs/django.log',
+            'filename': os.path.join(logs_dir, 'django.log'),
             'formatter': 'verbose',
         },
     },
@@ -203,25 +232,52 @@ if EMAIL_URL:
     print("✅ Email configuration detected")
 
 # ============================================================================
-# DEPLOYMENT VERIFICATION
+# DEPLOYMENT VERIFICATION - FIXED
 # ============================================================================
 
-# Print configuration summary
-print("🚀 RENDER SETTINGS LOADED SUCCESSFULLY!")
-print("=" * 50)
-print(f"📍 RENDER_EXTERNAL_HOSTNAME: {RENDER_EXTERNAL_HOSTNAME or 'Not set (development)'}")
-print(f"🌐 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
-print(f"🔐 SECRET_KEY: {'✅ Set' if SECRET_KEY else '❌ Missing'}")
-print(f"🐛 DEBUG: {DEBUG}")
-print(f"💾 DATABASE: {'✅ Render PostgreSQL' if os.getenv('DATABASE_URL') else '⚠️  SQLite fallback'}")
-print(f"📁 STATIC_ROOT: {STATIC_ROOT}")
-print(f"🔒 SSL_REDIRECT: {SECURE_SSL_REDIRECT}")
-print(f"⚡ CACHE_BACKEND: {CACHES['default']['BACKEND']}")
-print("=" * 50)
+# FIX 5: Only print in development or when explicitly requested
+if DEBUG or os.getenv('DJANGO_VERBOSE_SETTINGS'):
+    # Print configuration summary
+    print("🚀 RENDER SETTINGS LOADED SUCCESSFULLY!")
+    print("=" * 50)
+    print(f"📍 RENDER_EXTERNAL_HOSTNAME: {RENDER_EXTERNAL_HOSTNAME or 'Not set (development)'}")
+    print(f"🌐 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+    print(f"🔐 SECRET_KEY: {'✅ Set' if SECRET_KEY else '❌ Missing'}")
+    print(f"🐛 DEBUG: {DEBUG}")
+    print(f"💾 DATABASE: {'✅ Render PostgreSQL' if os.getenv('DATABASE_URL') else '⚠️  SQLite fallback'}")
+    print(f"📁 STATIC_ROOT: {STATIC_ROOT}")
+    print(f"🔒 SSL_REDIRECT: {SECURE_SSL_REDIRECT}")
+    print(f"⚡ CACHE_BACKEND: {CACHES['default']['BACKEND']}")
+    print("=" * 50)
 
-# Validate critical settings
-if not DEBUG and not os.getenv('DATABASE_URL'):
-    print("❌ CRITICAL: DATABASE_URL must be set in production!")
-    
-if not DEBUG and not RENDER_EXTERNAL_HOSTNAME:
-    print("⚠️  WARNING: RENDER_EXTERNAL_HOSTNAME not detected")
+    # Validate critical settings
+    if not DEBUG and not os.getenv('DATABASE_URL'):
+        print("❌ CRITICAL: DATABASE_URL must be set in production!")
+        
+    if not DEBUG and not RENDER_EXTERNAL_HOSTNAME:
+        print("⚠️  WARNING: RENDER_EXTERNAL_HOSTNAME not detected")
+
+# ============================================================================
+# ADDITIONAL FIXES FOR RENDER DEPLOYMENT
+# ============================================================================
+
+# FIX 6: Ensure CORS headers app is in INSTALLED_APPS
+if 'corsheaders' not in INSTALLED_APPS:
+    INSTALLED_APPS.append('corsheaders')
+
+# FIX 7: Ensure CORS middleware is properly positioned
+MIDDLEWARE = list(MIDDLEWARE)
+if 'corsheaders.middleware.CorsMiddleware' not in MIDDLEWARE:
+    MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')
+
+# FIX 8: Additional Render-specific settings
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+
+# FIX 9: Handle media files properly
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# FIX 10: Ensure proper timezone handling
+USE_TZ = True
+TIME_ZONE = 'UTC'
