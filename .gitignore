@@ -111,3 +111,15 @@ Dockerfile.backup
 # Render specific
 .render/
 staticfiles/
+
+# Docker
+.dockerignore
+docker-compose*.yml
+
+# Render
+.render/
+staticfiles/
+
+# Logs
+logs/
+*.log

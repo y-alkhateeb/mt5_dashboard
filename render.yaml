@@ -1,50 +1,52 @@
+# render.yaml - Docker Configuration for Trading Robot Admin
+# This configuration uses the custom Dockerfile for deployment
+
 services:
-  # Web Service (Django Trading Robot Admin) - Native Python
+  # Web Service (Django Trading Robot Admin) - Docker Build
   - type: web
     name: trading-robot-admin
-    runtime: python3
-    region: oregon
+    runtime: docker  # Use Docker instead of native Python
+    region: oregon   # Choose region closest to your users
     
-    # Build command - uses native Python buildpack
-    buildCommand: |
-      echo "🐍 Using Render native Python buildpack"
-      pip install --upgrade pip
-      pip install -r requirements.txt
-      echo "📦 Dependencies installed"
-      python manage.py collectstatic --noinput
-      echo "📁 Static files collected"
-      python manage.py migrate --noinput
-      echo "💾 Database migrations applied"
-      python manage.py setup_admin --username admin --password admin123
-      echo "👤 Admin user created"
-      echo "✅ Build completed successfully"
+    # Docker build configuration
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     
-    # Start command - runs the Django app
-    startCommand: |
-      echo "🚀 Starting Trading Robot Admin..."
-      gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --access-logfile - --error-logfile -
+    # No buildCommand needed - Docker handles everything
+    # Docker entrypoint handles migrations, admin setup, etc.
     
     # Service configuration
-    plan: starter
+    plan: starter  # Free tier - upgrade for production
     
     # Environment variables
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
       - key: DJANGO_SETTINGS_MODULE
         value: trading_admin.settings_render
       - key: SECRET_KEY
-        generateValue: true
+        generateValue: true  # Render auto-generates
       - key: DEBUG
         value: false
+      - key: WEB_CONCURRENCY
+        value: 3
+      - key: PORT
+        value: 10000
     
-    # Health check
+    # Health check endpoint
     healthCheckPath: /api/health/
+    
+    # Disk storage for logs and media
+    disk:
+      name: app-storage
+      mountPath: /app/logs
+      sizeGB: 1
 
   # PostgreSQL Database
   - type: pgsql
     name: trading-robot-db
-    region: oregon
+    region: oregon  # Same region as web service
     databaseName: trading_admin
     user: trading_admin_user
-    plan: starter
+    plan: starter  # Free tier - 1GB storage
+    
+    # Database configuration
+    postgresMajorVersion: 15
