@@ -34,9 +34,6 @@ dist/
 .cache/
 # Ignore test output
 test_output/
-# Ignore Docker files
-Dockerfile
-docker-compose.yml
 # Ignore configuration files
 config.ini
 # Ignore log files
@@ -52,12 +49,6 @@ config.ini
 deployment/
 *.zip
 trading-robot-admin-*.zip
-
-# SmarterASP.net specific
-web.config.backup
-# Railway specific
-.railway/
-railway.toml
 
 # SmarterASP.net files (removed)
 app.py
