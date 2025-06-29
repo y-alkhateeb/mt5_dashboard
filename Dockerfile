@@ -18,6 +18,5 @@ ENV DJANGO_SETTINGS_MODULE=trading_admin.settings_railway
 
 EXPOSE 8000
 
-ENTRYPOINT ["bash", "-c"] 
-
-CMD ["python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"]
+# The most robust way: Use a separate shell script as entrypoint
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"]
