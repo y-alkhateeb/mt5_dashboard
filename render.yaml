@@ -8,7 +8,8 @@ services:
       pip install -r requirements.txt --root-user-action=ignore &&
       python manage.py collectstatic --noinput &&
       python manage.py migrate --noinput &&
-      python manage.py createadmin
+      python manage.py createadmin &&
+      python manage.py create_sample_data --clean --clients 3 --licenses-per-client 2
     startCommand: |
       gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 50
     plan: starter
