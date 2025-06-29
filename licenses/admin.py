@@ -26,12 +26,18 @@ class ClientAdmin(admin.ModelAdmin):
 @admin.register(License)
 class LicenseAdmin(admin.ModelAdmin):
     list_display = [
-        'license_key_short', 'client_name', 'status_badge', 'account_status', 
-        'login_status', 'account_trade_mode_display', 'login_changes_count', 
-        'expires_at', 'usage_count', 'created_at'
+        'license_key_short', 'client_name', 'configuration_name', 'status_badge', 
+        'account_status', 'login_status', 'account_trade_mode_display', 
+        'login_changes_count', 'expires_at', 'usage_count', 'created_at'
     ]
-    list_filter = ['account_trade_mode', 'is_active', 'created_at', 'expires_at', 'client__country']
-    search_fields = ['license_key', 'client__first_name', 'client__last_name', 'system_hash', 'account_hash']
+    list_filter = [
+        'account_trade_mode', 'is_active', 'created_at', 'expires_at', 
+        'client__country', 'trading_configuration'
+    ]
+    search_fields = [
+        'license_key', 'client__first_name', 'client__last_name', 
+        'system_hash', 'account_hash', 'trading_configuration__name'
+    ]
     readonly_fields = [
         'license_key', 'system_hash', 'account_hash', 'account_hash_history', 'broker_server',
         'first_used_at', 'last_used_at', 'usage_count', 'created_at', 'updated_at'
@@ -39,7 +45,7 @@ class LicenseAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('License Information', {
-            'fields': ('license_key', 'client')
+            'fields': ('license_key', 'client', 'trading_configuration')
         }),
         ('Trading Configuration', {
             'fields': ('account_trade_mode', 'expires_at', 'is_active')
@@ -70,6 +76,13 @@ class LicenseAdmin(admin.ModelAdmin):
     def client_name(self, obj):
         return obj.client.full_name
     client_name.short_description = "Client"
+    
+    def configuration_name(self, obj):
+        if obj.trading_configuration:
+            url = reverse('admin:configurations_tradingconfiguration_change', args=[obj.trading_configuration.id])
+            return format_html('<a href="{}">{}</a>', url, obj.trading_configuration.name)
+        return "No Configuration"
+    configuration_name.short_description = "Configuration"
     
     def account_status(self, obj):
         if obj.system_hash:

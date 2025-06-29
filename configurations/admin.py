@@ -1,25 +1,21 @@
-# File: configurations/admin.py
-
 from django.contrib import admin
+from django.utils.html import format_html
+from django.urls import reverse
 from .models import TradingConfiguration
 
 @admin.register(TradingConfiguration)
 class TradingConfigurationAdmin(admin.ModelAdmin):
     list_display = [
-        'license', 'inp_AllowedSymbol', 'inp_SessionStart', 'inp_SessionEnd', 
-        'inp_StrictSymbolCheck', 'updated_at'
+        'name', 'inp_AllowedSymbol', 'inp_SessionStart', 'inp_SessionEnd', 
+        'license_count_display', 'is_active', 'updated_at'
     ]
-    list_filter = ['inp_AllowedSymbol', 'inp_StrictSymbolCheck', 'created_at']
-    search_fields = [
-        'license__license_key', 'license__client__first_name', 
-        'license__client__last_name', 'inp_AllowedSymbol'
-    ]
-    readonly_fields = ['created_at', 'updated_at']
+    list_filter = ['inp_AllowedSymbol', 'is_active', 'created_at']
+    search_fields = ['name', 'description', 'inp_AllowedSymbol']
+    readonly_fields = ['created_at', 'updated_at', 'license_count_display']
     
     fieldsets = (
-        ('License', {
-            'fields': ('license',),
-            'description': 'Associated trading license'
+        ('Configuration Identity', {
+            'fields': ('name', 'description', 'is_active')
         }),
         
         ('═══ Symbol Validation ═══', {
@@ -53,20 +49,21 @@ class TradingConfigurationAdmin(admin.ModelAdmin):
             'description': 'Set timeout values in minutes for different order types'
         }),
         
+        ('Usage Information', {
+            'fields': ('license_count_display',),
+            'classes': ('collapse',)
+        }),
+        
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
     
-    def get_readonly_fields(self, request, obj=None):
-        # Make license field readonly when editing existing configuration
-        if obj:  # editing an existing object
-            return self.readonly_fields + ('license',)
-        return self.readonly_fields
-    
-    # class Media:
-    #     css = {
-    #         'all': ('admin/css/custom_admin.css',)
-    #     }
-    #     js = ('admin/js/custom_admin.js',)
+    def license_count_display(self, obj):
+        count = obj.license_count
+        if count > 0:
+            url = reverse('admin:licenses_license_changelist') + f'?trading_configuration__id__exact={obj.id}'
+            return format_html('<a href="{}">{} licenses</a>', url, count)
+        return "0 licenses"
+    license_count_display.short_description = "Licenses Using This Config"

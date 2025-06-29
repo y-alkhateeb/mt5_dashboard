@@ -58,6 +58,14 @@ class License(models.Model):
         help_text="Client who owns this license"
     )
     
+    # ✅ NEW: Trading Configuration Assignment
+    trading_configuration = models.ForeignKey(
+        'configurations.TradingConfiguration',
+        on_delete=models.PROTECT,  # Prevent deletion of configs in use
+        related_name='licenses',
+        help_text="Trading configuration for this license"
+    )
+    
     # PRIMARY IDENTIFIER: System Hash (Trading Account Identifier)
     system_hash = models.CharField(
         max_length=128,
@@ -74,7 +82,6 @@ class License(models.Model):
     )
     
     # Account Hash History (JSON field to store previous account hashes)
-    # ✅ FIXED: Use callable function for default instead of undefined function
     account_hash_history = models.JSONField(default=default_account_hash_history, blank=True)
     
     # Other Information
@@ -126,12 +133,13 @@ class License(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
+        config_name = self.trading_configuration.name if self.trading_configuration else "No Config"
         if self.system_hash:
             account_info = f"Account: {self.system_hash[:8]}..."
             login_info = f" | Login: {self.account_hash[:8]}..." if self.account_hash else " | No Login"
-            return f"License {self.license_key[:8]}... - {self.client.full_name} ({account_info}{login_info})"
+            return f"License {self.license_key[:8]}... - {self.client.full_name} ({config_name}) ({account_info}{login_info})"
         else:
-            return f"License {self.license_key[:8]}... - {self.client.full_name} (Not Bound)"
+            return f"License {self.license_key[:8]}... - {self.client.full_name} ({config_name}) (Not Bound)"
     
     @property
     def is_expired(self):

@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class BotValidationAPIView(APIView):
-    """🤖 Simple API for trading bot license validation"""
+    """🤖 API for trading bot license validation"""
     permission_classes = [AllowAny]
     
     def post(self, request):
@@ -87,16 +87,22 @@ class BotValidationAPIView(APIView):
             config, created = TradingConfiguration.objects.get_or_create(license=license_obj)
             config_serializer = TradingConfigurationSerializer(config)
             
-            # Return clean response
-            response_data = {
-                'success': True,
-                'message': 'License validated successfully',
-                'configuration': config_serializer.data,
-                'expires_at': license_obj.expires_at
-            }
-            
-            logger.info(f"License validation successful for {license_key[:8]}...")
-            return Response(response_data)
+            # Get configuration from license's assigned configuration
+            if license_obj.trading_configuration:
+                config_serializer = TradingConfigurationSerializer(license_obj.trading_configuration)
+                
+                # Return clean response
+                response_data = {
+                    'success': True,
+                    'message': 'License validated successfully',
+                    'configuration': config_serializer.data,
+                    'expires_at': license_obj.expires_at
+                }
+            else:
+                return Response({
+                    'success': False,
+                    'message': 'No trading configuration assigned to this license'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         except Exception as e:
             logger.error(f"License validation error for {license_key[:8]}...: {str(e)}")
