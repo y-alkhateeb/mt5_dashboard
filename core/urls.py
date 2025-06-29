@@ -1,7 +1,6 @@
 from django.urls import path
 from .views import DashboardView
 from .api_views import api_documentation, health_check
-from .setup_views import setup_admin, setup_status
 
 urlpatterns = [
     # Dashboard URLs
@@ -11,8 +10,4 @@ urlpatterns = [
     # API Documentation URLs
     path('api/docs/', api_documentation, name='api-docs'),
     path('api/health/', health_check, name='health-check'),
-    
-    # Setup URLs (temporary - remove after first use)
-    path('setup/status/', setup_status, name='setup-status'),
-    path('setup/admin/', setup_admin, name='setup-admin'),
 ]

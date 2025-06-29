@@ -19,35 +19,34 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# ✅ FIXED: Added rate limiting for bot validation
 class BotValidationThrottle(AnonRateThrottle):
     scope = 'bot_validation'
 
 class BotValidationAPIView(APIView):
-    """🤖 API for trading bot license validation with rate limiting"""
+    """🤖 API for trading bot license validation with enhanced error handling"""
     permission_classes = [AllowAny]
-    throttle_classes = [BotValidationThrottle]  # ✅ FIXED: Added rate limiting
+    throttle_classes = [BotValidationThrottle]
     
     def post(self, request):
         """Validate trading bot license and return configuration"""
-        serializer = BotValidationRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'error': {
-                    'code': 'INVALID_REQUEST',
-                    'message': 'Invalid request data',
-                    'details': serializer.errors
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        license_key = serializer.validated_data['license_key']
-        system_hash = serializer.validated_data['system_hash']
-        account_trade_mode = serializer.validated_data['account_trade_mode']
-        broker_server = serializer.validated_data.get('broker_server', '')
-        account_hash = serializer.validated_data.get('account_hash', '')
-        
         try:
+            serializer = BotValidationRequestSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response({
+                    'success': False,
+                    'error': {
+                        'code': 'INVALID_REQUEST',
+                        'message': 'Invalid request data',
+                        'details': serializer.errors
+                    }
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            license_key = serializer.validated_data['license_key']
+            system_hash = serializer.validated_data['system_hash']
+            account_trade_mode = serializer.validated_data['account_trade_mode']
+            broker_server = serializer.validated_data.get('broker_server', '')
+            account_hash = serializer.validated_data.get('account_hash', '')
+            
             # Find license
             try:
                 license_obj = License.objects.select_related('trading_configuration').get(
@@ -61,7 +60,7 @@ class BotValidationAPIView(APIView):
                         'code': 'INVALID_LICENSE',
                         'message': 'Invalid license key'
                     }
-                })
+                }, status=status.HTTP_401_UNAUTHORIZED)
             
             # Check if license is valid
             if not license_obj.is_valid:
@@ -82,7 +81,7 @@ class BotValidationAPIView(APIView):
                         'code': error_code,
                         'message': error_message
                     }
-                })
+                }, status=status.HTTP_401_UNAUTHORIZED)
             
             # Validate system hash
             system_valid, system_message = license_obj.validate_system_hash(system_hash)
@@ -94,7 +93,7 @@ class BotValidationAPIView(APIView):
                         'code': 'SYSTEM_MISMATCH',
                         'message': system_message
                     }
-                })
+                }, status=status.HTTP_403_FORBIDDEN)
             
             # Check account trade mode compatibility
             if license_obj.system_hash and license_obj.account_trade_mode != account_trade_mode:
@@ -105,7 +104,7 @@ class BotValidationAPIView(APIView):
                         'code': 'TRADE_MODE_MISMATCH',
                         'message': f'Account trade mode mismatch. Expected {license_obj.account_trade_mode}, got {account_trade_mode}'
                     }
-                })
+                }, status=status.HTTP_403_FORBIDDEN)
             
             # Bind account (internal tracking)
             license_obj.bind_account(
@@ -115,7 +114,7 @@ class BotValidationAPIView(APIView):
                 account_hash=account_hash if account_hash else None
             )
             
-            # ✅ FIXED: Consistent configuration retrieval
+            # Get configuration
             if not license_obj.trading_configuration:
                 logger.error(f"No trading configuration assigned to license {license_key[:8]}...")
                 return Response({
@@ -138,7 +137,7 @@ class BotValidationAPIView(APIView):
                 'license_info': {
                     'usage_count': license_obj.usage_count,
                     'daily_usage': license_obj.daily_usage_count,
-                    'first_time_use': license_obj.first_used_at is None,
+                    'first_time_use': license_obj.usage_count == 1,
                     'account_login_changed': license_obj.account_hash_changes_count > 1
                 }
             }
@@ -147,7 +146,7 @@ class BotValidationAPIView(APIView):
             return Response(response_data)
             
         except Exception as e:
-            logger.error(f"License validation error for {license_key[:8]}...: {str(e)}")
+            logger.error(f"License validation error: {str(e)}", exc_info=True)
             return Response({
                 'success': False,
                 'error': {
@@ -165,7 +164,6 @@ class LicenseViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         license_instance = serializer.save(created_by=self.request.user)
-        # Note: Configuration should be assigned manually or via signal
     
     @action(detail=True, methods=['get', 'put', 'patch'])
     def configuration(self, request, pk=None):
@@ -227,6 +225,10 @@ class LicenseViewSet(viewsets.ModelViewSet):
     def active(self, request):
         """Get all active licenses"""
         active_licenses = self.queryset.filter(is_active=True)
+        page = self.paginate_queryset(active_licenses)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(active_licenses, many=True)
         return Response(serializer.data)
     
@@ -234,6 +236,10 @@ class LicenseViewSet(viewsets.ModelViewSet):
     def expired(self, request):
         """Get all expired licenses"""
         expired_licenses = self.queryset.filter(expires_at__lt=timezone.now())
+        page = self.paginate_queryset(expired_licenses)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(expired_licenses, many=True)
         return Response(serializer.data)
     
@@ -246,6 +252,10 @@ class LicenseViewSet(viewsets.ModelViewSet):
             expires_at__gt=timezone.now(),
             is_active=True
         )
+        page = self.paginate_queryset(expiring_licenses)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(expiring_licenses, many=True)
         return Response(serializer.data)
 

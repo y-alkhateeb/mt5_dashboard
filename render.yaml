@@ -1,31 +1,59 @@
 services:
-  # Web Service (Django App)
+  # Web Service (Django Trading Robot Admin)
   - type: web
     name: trading-robot-admin
     runtime: python3
+    region: oregon  # Choose region closest to your users
+    
+    # Build command - runs once during deployment
     buildCommand: |
-      pip install --upgrade pip &&
-      pip install -r requirements.txt &&
-      python manage.py collectstatic --noinput &&
+      echo "🚀 Starting build process..."
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      echo "📦 Dependencies installed"
+      python manage.py collectstatic --noinput
+      echo "📁 Static files collected"
       python manage.py migrate --noinput
+      echo "💾 Database migrations applied"
+      echo "✅ Build completed successfully"
+    
+    # Start command - runs every time the service starts
     startCommand: |
-      python manage.py migrate --noinput &&
-      gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
-    plan: starter
+      echo "🚀 Starting Trading Robot Admin..."
+      gunicorn trading_admin.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 50 --access-logfile - --error-logfile -
+    
+    # Service configuration
+    plan: starter  # Free tier - upgrade for production
+    
+    # Environment variables
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.5
+        value: 3.11.9
       - key: DJANGO_SETTINGS_MODULE
         value: trading_admin.settings_render
       - key: SECRET_KEY
-        generateValue: true
+        generateValue: true  # Render will auto-generate
       - key: DEBUG
         value: false
+      - key: WEB_CONCURRENCY
+        value: 3
+    
+    # Health check endpoint
     healthCheckPath: /api/health/
     
+    # Disk storage for logs
+    disk:
+      name: logs
+      mountPath: /opt/render/project/src/logs
+      sizeGB: 1
+
   # PostgreSQL Database
   - type: pgsql
     name: trading-robot-db
+    region: oregon  # Same region as web service
     databaseName: trading_admin
     user: trading_admin_user
-    plan: starter
+    plan: starter  # Free tier - 1GB storage, expires after 90 days without upgrade
+    
+    # Database configuration
+    postgresMajorVersion: 15

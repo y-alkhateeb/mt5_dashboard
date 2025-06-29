@@ -62,3 +62,44 @@ staticfiles/
 
 # Render deployment files
 render.toml
+
+# Render specific
+staticfiles/
+.render/
+
+# Backup files
+*.backup
+requirements.txt.backup
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Deployment files
+deployment/
+render_config/
+
+# Logs
+logs/*.log
+!logs/.gitkeep
+
+# Database
+*.sqlite3
+*.db
+
+# Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,16 +1,35 @@
+# Core Django and Web Framework
 Django==4.2.7
 djangorestframework==3.14.0
-django-cors-headers==4.3.1
-python-decouple==3.8
+
+# Database and Caching
 psycopg2-binary==2.9.7
 dj-database-url==2.1.0
-Pillow==10.1.0
-whitenoise==6.6.0
-django-crispy-forms==2.1
-crispy-bootstrap5==0.7
-django-extensions==3.2.3
-gunicorn==21.2.0
 redis==5.0.1
 
-# Optional: Additional rate limiting (if DRF throttling is not sufficient)
+# Production Server
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# Static Files and Media
+Pillow==10.1.0
+
+# CORS and Security
+django-cors-headers==4.3.1
+
+# Forms and UI
+django-crispy-forms==2.1
+crispy-bootstrap5==0.7
+
+# Development and Utilities
+django-extensions==3.2.3
+python-decouple==3.8
+
+# API Documentation (Optional)
+# drf-spectacular==0.26.5
+
+# Monitoring and Error Tracking (Optional)
+# sentry-sdk[django]==1.38.0
+
+# Rate Limiting (Built into DRF, but can add django-ratelimit if needed)
 # django-ratelimit==4.1.0
