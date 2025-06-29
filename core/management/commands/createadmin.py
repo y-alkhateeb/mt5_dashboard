@@ -5,8 +5,8 @@ class Command(BaseCommand):
     help = 'Create admin user if it does not exist'
     
     def handle(self, *args, **options):
-        username = 'admin'
-        email = 'admin@example.com'
+        username = 'admin1'
+        email = 'admi1n@example.com'
         password = 'admin123'
         
         if User.objects.filter(username=username).exists():

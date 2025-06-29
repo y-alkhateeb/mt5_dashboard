@@ -123,3 +123,15 @@ staticfiles/
 # Logs
 logs/
 *.log
+
+# Docker
+.dockerignore
+docker-compose*.yml
+
+# Render
+.render/
+staticfiles/
+
+# Logs
+logs/
+*.log

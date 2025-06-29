@@ -334,8 +334,146 @@ fi
 
 echo ""
 
-# Step 5: Create .dockerignore
-echo "📝 Step 5: Creating .dockerignore..."
+# Step 5: Create Docker entrypoint script
+echo "🐳 Step 5: Creating Docker entrypoint script..."
+
+cat > docker-entrypoint.sh << 'EOF'
+#!/bin/bash
+# Docker entrypoint script for Trading Robot Admin
+
+set -e
+
+echo "🚀 Starting Trading Robot Admin on Render.com"
+echo "=============================================="
+
+# Function to wait for database
+wait_for_db() {
+    echo "⏳ Waiting for database connection..."
+    
+    if [ -z "$DATABASE_URL" ]; then
+        echo "⚠️  DATABASE_URL not set, skipping database wait"
+        return 0
+    fi
+    
+    python -c "
+import os
+import sys
+import time
+import psycopg2
+from urllib.parse import urlparse
+
+# Parse DATABASE_URL
+db_url = os.getenv('DATABASE_URL')
+parsed = urlparse(db_url)
+db_config = {
+    'host': parsed.hostname,
+    'port': parsed.port or 5432,
+    'user': parsed.username,
+    'password': parsed.password,
+    'dbname': parsed.path[1:]  # Remove leading '/'
+}
+
+max_attempts = 30
+attempt = 0
+
+while attempt < max_attempts:
+    try:
+        conn = psycopg2.connect(**db_config)
+        conn.close()
+        print('✅ Database connection successful')
+        break
+    except psycopg2.OperationalError:
+        attempt += 1
+        print(f'⏳ Database not ready, attempt {attempt}/{max_attempts}')
+        if attempt >= max_attempts:
+            print('❌ Database connection failed after maximum attempts')
+            sys.exit(1)
+        time.sleep(2)
+"
+}
+
+# Function to run Django setup
+setup_django() {
+    echo "🔧 Setting up Django application..."
+    
+    # Run database migrations
+    echo "📊 Running database migrations..."
+    python manage.py migrate --noinput
+    
+    # Create admin user if it doesn't exist
+    echo "👤 Setting up admin user..."
+    python manage.py setup_admin --username admin --password admin123 --email admin@example.com || true
+    
+    # Create sample data if database is empty
+    echo "📋 Checking if sample data is needed..."
+    python -c "
+import django
+import os
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_render')
+django.setup()
+
+from licenses.models import License
+from configurations.models import TradingConfiguration
+
+if License.objects.count() == 0 and TradingConfiguration.objects.count() == 0:
+    print('📊 Creating sample data...')
+    from django.core.management import call_command
+    try:
+        call_command('create_sample_data', '--clients', '3')
+        print('✅ Sample data created')
+    except Exception as e:
+        print(f'⚠️  Could not create sample data: {e}')
+else:
+    print('✅ Data already exists, skipping sample data creation')
+"
+}
+
+# Function to start the application
+start_app() {
+    echo "🚀 Starting application server..."
+    echo "📍 Port: ${PORT:-10000}"
+    echo "🌐 Workers: ${WEB_CONCURRENCY:-3}"
+    
+    exec gunicorn trading_admin.wsgi:application \
+        --bind 0.0.0.0:${PORT:-10000} \
+        --workers ${WEB_CONCURRENCY:-3} \
+        --timeout 120 \
+        --max-requests 1000 \
+        --max-requests-jitter 50 \
+        --access-logfile - \
+        --error-logfile - \
+        --log-level info \
+        --preload
+}
+
+# Main execution function
+main() {
+    # Wait for database if DATABASE_URL is provided
+    if [ ! -z "$DATABASE_URL" ]; then
+        wait_for_db
+        setup_django
+    else
+        echo "⚠️  No DATABASE_URL found, skipping database setup"
+    fi
+    
+    # Start the application
+    start_app
+}
+
+# Run main function with all arguments
+main "$@"
+EOF
+
+# Make it executable
+chmod +x docker-entrypoint.sh
+
+echo "✅ Created docker-entrypoint.sh"
+
+echo ""
+
+# Step 6: Create .dockerignore
+echo "📝 Step 6: Creating .dockerignore..."
 
 cat > .dockerignore << 'EOF'
 # Git
@@ -398,8 +536,8 @@ echo "✅ Created .dockerignore"
 
 echo ""
 
-# Step 6: Update .gitignore
-echo "📝 Step 6: Updating .gitignore..."
+# Step 7: Update .gitignore
+echo "📝 Step 7: Updating .gitignore..."
 
 cat >> .gitignore << 'EOF'
 
@@ -420,8 +558,8 @@ echo "✅ Updated .gitignore"
 
 echo ""
 
-# Step 7: Test Docker build locally (optional)
-echo "🧪 Step 7: Testing Docker configuration..."
+# Step 8: Test Docker build locally (optional)
+echo "🧪 Step 8: Testing Docker configuration..."
 
 if command -v docker >/dev/null 2>&1; then
     echo "🐳 Docker found - you can test locally with:"
@@ -445,12 +583,13 @@ fi
 
 echo ""
 
-# Step 8: Final instructions
+# Step 9: Final instructions
 echo "🎉 DOCKER DEPLOYMENT SETUP COMPLETED!"
 echo "===================================="
 echo ""
 echo "📁 Files created/updated:"
 echo "   ✅ Dockerfile (production-ready)"
+echo "   ✅ docker-entrypoint.sh (startup script)"
 echo "   ✅ render.yaml (Docker configuration)"
 echo "   ✅ trading_admin/settings_render.py"
 echo "   ✅ core/management/commands/setup_admin.py"
