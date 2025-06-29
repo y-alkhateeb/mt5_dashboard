@@ -53,7 +53,11 @@ setup_django() {
     python manage.py migrate --noinput
     
     echo "👤 Setting up admin user..."
-    python manage.py setup_admin --username admin --password admin123 --email admin@example.com 2>/dev/null || true
+    python manage.py reset_and_setup \
+        --username yousef \
+        --password admin123123 \
+        --email admin@example.com \
+        --force 2>/dev/null || true
     
     echo "📋 Setting up sample data..."
     python -c "
