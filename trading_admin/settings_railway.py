@@ -49,7 +49,7 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ✅ FIXED: Security settings for Railway
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = False
 
 # Security settings appropriate for Railway
 SECURE_SSL_REDIRECT = False  # Railway handles SSL termination
