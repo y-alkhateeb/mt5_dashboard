@@ -1,7 +1,9 @@
+# Add these URLs to core/urls.py
+
 from django.urls import path
 from .views import DashboardView
 from .api_views import api_documentation, health_check
-from .setup_views import setup_admin, setup_status
+from .setup_views import setup_admin, setup_status  # Add this import
 
 urlpatterns = [
     # Dashboard URLs
