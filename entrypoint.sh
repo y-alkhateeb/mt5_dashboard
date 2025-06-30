@@ -1,5 +1,5 @@
 #!/bin/bash
-# Updated entrypoint.sh with better migration handling
+# Updated entrypoint.sh with complete migration handling fixes
 set -e
 
 echo "🚀 Starting Trading Admin deployment with smart migration handling..."
@@ -8,11 +8,11 @@ echo "🌐 Port configuration: ${PORT:-10000}"
 # Set Django settings for production
 export DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-trading_admin.settings_render}
 
+# Remove problematic migration files that expect old field names
 echo "🗑️  Removing problematic migration files..."
 rm -f configurations/migrations/0002_remove_tradingconfiguration_inp_allowedsymbol_and_more.py
 rm -f configurations/migrations/0002_rename_inp_allowedsymbol_tradingconfiguration_allowed_symbol_and_more.py
 rm -f configurations/migrations/0002_*.py
-
 
 # Wait for PostgreSQL database
 echo "⏳ Waiting for PostgreSQL database..."
@@ -132,15 +132,13 @@ echo "📊 Applying migration strategy: $STRATEGY"
 
 case $STRATEGY in
     "up_to_date")
-        echo "✅ Database is up to date - skipping problematic migrations..."
-        echo "🔧 Marking problematic migrations as applied..."
-        python manage.py migrate configurations 0001 --fake
-        python manage.py migrate configurations --fake-initial
+        echo "✅ Database is up to date - creating sync migration..."
+        python manage.py makemigrations configurations --noinput
         python manage.py migrate --noinput || {
-        echo "❌ Failed to apply pending migrations"
-        exit 1
-    }
-    ;;
+            echo "❌ Failed to apply pending migrations"
+            exit 1
+        }
+        ;;
         
     "standard_migration")
         echo "🔄 Applying standard field rename migrations..."
@@ -271,9 +269,9 @@ with connection.cursor() as cursor:
             exit 1
         }
         
-        # Now apply any remaining Django migrations
-        echo "🔄 Applying Django migrations after custom mapping..."
-        python manage.py makemigrations configurations --noinput --empty
+        # Now create and apply migrations to sync Django's state
+        echo "🔄 Creating migrations to sync Django state..."
+        python manage.py makemigrations configurations --noinput
         python manage.py migrate --noinput || {
             echo "⚠️  Some Django migrations may have failed, but continuing..."
         }
@@ -299,37 +297,36 @@ from django.db import connection
 
 required_tables = [
     'configurations_tradingconfiguration',
-    'licenses_client',
+    'licenses_client', 
     'licenses_license'
 ]
 
 with connection.cursor() as cursor:
     missing_tables = []
     for table in required_tables:
-        cursor.execute(f\"\"\"
+        cursor.execute(f'''
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_name = '{table}'
             );
-        \"\"\")
+        ''')
         if not cursor.fetchone()[0]:
             missing_tables.append(table)
-
-if missing_tables:
-    print(f'❌ Missing tables: {missing_tables}')
-    exit(1)
-
-# Check that we have the required fields
-with connection.cursor() as cursor:
-    cursor.execute(\"\"\"
+    
+    if missing_tables:
+        print(f'❌ Missing tables: {missing_tables}')
+        exit(1)
+    
+    cursor.execute('''
         SELECT column_name 
         FROM information_schema.columns 
         WHERE table_name = 'configurations_tradingconfiguration'
         AND column_name IN ('allowed_symbol', 'fib_session_high', 'fib_primary_buy_entry')
         ORDER BY column_name;
-    \"\"\")
+    ''')
+    
+    key_fields = [row[0] for row in cursor.fetchall()]
 
-key_fields = [row[0] for row in cursor.fetchall()]
 if len(key_fields) >= 3:
     print(f'✅ Key fields verified: {key_fields}')
 else:
