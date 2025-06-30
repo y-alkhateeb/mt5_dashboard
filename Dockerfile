@@ -66,9 +66,9 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p logs staticfiles media
 
-# Set permissions
-RUN chown -R django:django /app && \
-    chmod +x /app/docker-entrypoint.sh
+# Set permissions for the app directory
+# Note: The chmod for docker-entrypoint.sh has been removed.
+RUN chown -R django:django /app
 
 # Switch to non-root user
 USER django
@@ -80,5 +80,6 @@ EXPOSE $PORT
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${PORT:-10000}/api/health/ || exit 1
 
-# Set entrypoint
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# CMD to start the application server
+# The ENTRYPOINT has been removed. Gunicorn is now started directly.
+CMD ["gunicorn", "trading_admin.wsgi:application", "--bind", "0.0.0.0:$PORT", "--workers", "$WEB_CONCURRENCY"]
