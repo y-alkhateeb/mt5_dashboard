@@ -62,6 +62,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY . .
 
+RUN mkdir -p logs staticfiles media && \
+    chmod +x entrypoint.sh && \
+    chown -R django:django /app
+
 # Create necessary directories
 RUN mkdir -p logs staticfiles media
 
@@ -80,6 +84,6 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${PORT:-10000}/api/health/ || exit 1
 
 # CMD to start the application server
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
 # Gunicorn is now started directly.
-CMD ["gunicorn", "trading_admin.wsgi:application", "--bind", "0.0.0.0:$PORT", "--workers", "3""]
+CMD ["gunicorn", "trading_admin.wsgi:application", "--bind", "0.0.0.0:$PORT", "--workers", "3"]
