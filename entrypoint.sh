@@ -9,7 +9,7 @@ echo "🌐 Port configuration: ${PORT:-10000}"
 
 
 echo "Running database migrations..."
-exec rm -rf licenses/migrations/ configurations/migrations/ 2>/dev/null
+rm -rf licenses/migrations/ configurations/migrations/ 2>/dev/null
 # For Django:
 echo "Running database migrations..."
 python manage.py makemigrations licenses
