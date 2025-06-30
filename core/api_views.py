@@ -51,11 +51,11 @@ def health_check(request):
             'status': 'healthy',
             'database': 'connected',
             'total_licenses': license_count,
-            'timestamp': timezone.now().isoformat()  # ← FIXED: Now works
+            'timestamp': timezone.now().isoformat()
         })
     except Exception as e:
         return Response({
             'status': 'unhealthy',
             'error': str(e),
-            'timestamp': timezone.now().isoformat()  # ← FIXED: Now works
+            'timestamp': timezone.now().isoformat() 
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
