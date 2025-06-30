@@ -126,9 +126,11 @@ echo "📊 Applying migration strategy: $STRATEGY"
 
 case $STRATEGY in
     "up_to_date")
-    echo "✅ Database is up to date - skipping problematic migrations..."
-    rm -f configurations/migrations/0002_*.py
-    python manage.py migrate --noinput || {
+        echo "✅ Database is up to date - skipping problematic migrations..."
+        echo "🔧 Marking problematic migrations as applied..."
+        python manage.py migrate configurations 0001 --fake
+        python manage.py migrate configurations --fake-initial
+        python manage.py migrate --noinput || {
         echo "❌ Failed to apply pending migrations"
         exit 1
     }
@@ -262,11 +264,6 @@ with connection.cursor() as cursor:
             echo "❌ Custom field mapping failed"
             exit 1
         }
-        
-        echo "🔧 Marking problematic migrations as applied..."
-        python manage.py migrate configurations 0001 --fake
-        python manage.py migrate configurations --fake-initial
-        
         
         # Now apply any remaining Django migrations
         echo "🔄 Applying Django migrations after custom mapping..."
