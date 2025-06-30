@@ -40,8 +40,7 @@ FROM python:3.11.9-slim as production
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=trading_admin.settings_render \
-    PORT=10000 \
-    WEB_CONCURRENCY=3
+    PORT=10000
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -81,5 +80,5 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${PORT:-10000}/api/health/ || exit 1
 
 # CMD to start the application server
-# The ENTRYPOINT has been removed. Gunicorn is now started directly.
-CMD ["gunicorn", "trading_admin.wsgi:application", "--bind", "0.0.0.0:$PORT", "--workers", "$WEB_CONCURRENCY"]
+# Gunicorn is now started directly.
+CMD ["gunicorn", "trading_admin.wsgi:application", "--bind", "0.0.0.0:$PORT", "--workers", "3""]
