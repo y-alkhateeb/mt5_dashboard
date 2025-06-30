@@ -76,7 +76,6 @@ class License(models.Model):
     system_hash = models.CharField(
         max_length=128,
         blank=True, null=True,
-        unique=True,  # This is the main unique identifier
         help_text="Primary trading account identifier (set on first use)"
     )
     
