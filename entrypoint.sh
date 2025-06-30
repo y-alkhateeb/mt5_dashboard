@@ -1,13 +1,21 @@
 #!/bin/sh
+set -e
 
-# Optional: Wait for the database to be ready (e.g., for PostgreSQL)
-# You might need to install 'netcat' in your Dockerfile: RUN apt-get update && apt-get install -y netcat-traditional
-# while ! nc -z db 5432; do
-#   echo "Waiting for database..."
-#   sleep 1
-# done
-# echo "Database is up!"
+echo "🚀 Starting Trading Admin deployment..."
+echo "🌐 Port configuration: ${PORT:-10000}"
 
+# ... existing migration code ...
+
+echo "🎯 Starting application server on port ${PORT:-10000}..."
+exec gunicorn trading_admin.wsgi:application \
+    --bind "0.0.0.0:${PORT:-10000}" \
+    --workers 3 \
+    --timeout 120 \
+    --max-requests 1000 \
+    --max-requests-jitter 100 \
+    --preload \
+    --log-level info
+    
 echo "Running database migrations..."
 # For Django:
 python manage.py migrate --noinput
