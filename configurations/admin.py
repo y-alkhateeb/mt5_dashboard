@@ -31,7 +31,7 @@ class TradingConfigurationAdmin(admin.ModelAdmin):
             'description': 'Set trading session times (HH:MM format)'
         }),
         
-        ('═══ Enhanced Fibonacci Levels ═══', {
+        ('═══ Fibonacci Levels ═══', {
             'fields': (
                 ('fib_primary_buy_tp', 'fib_primary_buy_entry', 'fib_session_high'),
                 ('fib_primary_buy_sl', 'fib_primary_sell_sl'),
