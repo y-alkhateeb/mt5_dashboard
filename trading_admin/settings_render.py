@@ -9,7 +9,7 @@ import dj_database_url
 from django.core.management.utils import get_random_secret_key
 
 # Import base settings
-from .settings import *
+from trading_admin.settings import *
 
 # ============================================================================
 # SECURITY SETTINGS
