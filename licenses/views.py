@@ -10,8 +10,7 @@ from .models import License, Client
 from .serializers import (
     LicenseSerializer, 
     ClientSerializer,
-    BotValidationRequestSerializer, 
-    BotValidationResponseSerializer
+    BotValidationRequestSerializer
 )
 from configurations.models import TradingConfiguration
 from configurations.serializers import TradingConfigurationSerializer
