@@ -264,6 +264,7 @@ with connection.cursor() as cursor:
         
         # Now apply any remaining Django migrations
         echo "🔄 Applying Django migrations after custom mapping..."
+        python manage.py makemigrations configurations --noinput --empty
         python manage.py migrate --noinput || {
             echo "⚠️  Some Django migrations may have failed, but continuing..."
         }
@@ -310,13 +311,14 @@ if missing_tables:
     exit(1)
 
 # Check that we have the required fields
-cursor.execute(\"\"\"
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name = 'configurations_tradingconfiguration'
-    AND column_name IN ('allowed_symbol', 'fib_session_high', 'fib_primary_buy_entry')
-    ORDER BY column_name;
-\"\"\")
+with connection.cursor() as cursor:
+    cursor.execute(\"\"\"
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'configurations_tradingconfiguration'
+        AND column_name IN ('allowed_symbol', 'fib_session_high', 'fib_primary_buy_entry')
+        ORDER BY column_name;
+    \"\"\")
 
 key_fields = [row[0] for row in cursor.fetchall()]
 if len(key_fields) >= 3:
