@@ -1,8 +1,8 @@
 #!/bin/bash
-# Updated entrypoint.sh for field rename migrations - preserves data
+# Updated entrypoint.sh with better migration handling
 set -e
 
-echo "🚀 Starting Trading Admin deployment with field rename migrations..."
+echo "🚀 Starting Trading Admin deployment with smart migration handling..."
 echo "🌐 Port configuration: ${PORT:-10000}"
 
 # Set Django settings for production
@@ -49,8 +49,8 @@ except Exception as e:
     print(f'⚠️  Database check failed: {e}')
 "
 
-# Check database state and determine migration strategy
-echo "🔍 Analyzing database state for field rename migration..."
+# Smart migration detection and handling
+echo "🔍 Analyzing database state..."
 python -c "
 import os, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_render')
@@ -59,175 +59,224 @@ django.setup()
 from django.db import connection
 from django.core.management import call_command
 
-print('🔍 Checking database tables and field structure...')
-
-tables_exist = []
-field_structure = {}
+print('🔍 Checking database tables and current migration state...')
 
 with connection.cursor() as cursor:
-    # Check if main tables exist
-    required_tables = [
-        'configurations_tradingconfiguration',
-        'licenses_client', 
-        'licenses_license'
-    ]
+    # Check if configurations table exists
+    cursor.execute(\"\"\"
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_name = 'configurations_tradingconfiguration'
+        );
+    \"\"\")
     
-    for table in required_tables:
-        cursor.execute(f\"\"\"
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_name = '{table}'
-            );
-        \"\"\")
-        if cursor.fetchone()[0]:
-            tables_exist.append(table)
+    table_exists = cursor.fetchone()[0]
     
-    print(f'✅ Existing tables: {tables_exist}')
+    if not table_exists:
+        print('📝 Fresh database detected - will create clean migrations')
+        exit(0)
     
-    # Check field structure in configurations table if it exists
-    if 'configurations_tradingconfiguration' in tables_exist:
+    # Check current field structure
+    cursor.execute(\"\"\"
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'configurations_tradingconfiguration'
+        ORDER BY column_name;
+    \"\"\")
+    
+    current_fields = [row[0] for row in cursor.fetchall()]
+    print(f'📋 Current fields found: {len(current_fields)} fields')
+    
+    # Determine strategy based on current field names
+    has_inp_fields = any(field.startswith('inp_') for field in current_fields)
+    has_new_fields = any(field.startswith('fib_session_') or field.startswith('fib_primary_') for field in current_fields)
+    has_old_fib_fields = any(field.startswith('fib_level_') for field in current_fields)
+    has_allowed_symbol = 'allowed_symbol' in current_fields
+    
+    print(f'🔍 Field analysis:')
+    print(f'   Has inp_ fields: {has_inp_fields}')
+    print(f'   Has new fields: {has_new_fields}')
+    print(f'   Has old fib_level_ fields: {has_old_fib_fields}')
+    print(f'   Has allowed_symbol: {has_allowed_symbol}')
+    
+    # Strategy decision
+    if has_new_fields and has_allowed_symbol:
+        print('✅ Database already has new field structure')
+        strategy = 'up_to_date'
+    elif has_inp_fields and not has_new_fields:
+        print('🔄 Database has original inp_ fields - standard migration needed')
+        strategy = 'standard_migration'
+    elif has_old_fib_fields and not has_new_fields:
+        print('⚠️  Database has inconsistent field structure - requires custom mapping')
+        strategy = 'custom_migration'
+    else:
+        print('❓ Unknown database state - will attempt recovery')
+        strategy = 'recovery'
+    
+    print(f'📋 Migration strategy: {strategy}')
+    
+    # Store strategy for shell script
+    with open('/tmp/migration_strategy.txt', 'w') as f:
+        f.write(strategy)
+"
+
+# Read the strategy
+STRATEGY=$(cat /tmp/migration_strategy.txt 2>/dev/null || echo "recovery")
+echo "📊 Applying migration strategy: $STRATEGY"
+
+case $STRATEGY in
+    "up_to_date")
+        echo "✅ Database is up to date - applying any pending migrations..."
+        python manage.py migrate --noinput || {
+            echo "❌ Failed to apply pending migrations"
+            exit 1
+        }
+        ;;
+        
+    "standard_migration")
+        echo "🔄 Applying standard field rename migrations..."
+        python manage.py migrate --noinput || {
+            echo "❌ Standard migration failed"
+            exit 1
+        }
+        ;;
+        
+    "custom_migration"|"recovery")
+        echo "🛠️  Applying custom field mapping..."
+        
+        # Create a custom SQL migration to handle the current state
+        python -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_render')
+django.setup()
+
+from django.db import connection, transaction
+
+print('🔧 Executing custom field mapping...')
+
+with connection.cursor() as cursor:
+    with transaction.atomic():
+        # Get current columns
         cursor.execute(\"\"\"
             SELECT column_name 
             FROM information_schema.columns 
             WHERE table_name = 'configurations_tradingconfiguration'
-            AND column_name LIKE '%fib%'
             ORDER BY column_name;
         \"\"\")
         
-        fib_fields = [row[0] for row in cursor.fetchall()]
-        print(f'📋 Current Fibonacci fields: {fib_fields}')
+        current_fields = [row[0] for row in cursor.fetchall()]
+        print(f'📋 Working with {len(current_fields)} existing fields')
         
-        # Determine if we have old or new field names
-        old_field_pattern = any('fib_level_' in field for field in fib_fields)
-        new_field_pattern = any('fib_session_' in field or 'fib_primary_' in field for field in fib_fields)
+        # Map problematic fields to correct names
+        field_mappings = {
+            # Basic fields
+            'inp_AllowedSymbol': 'allowed_symbol',
+            'inp_StrictSymbolCheck': 'strict_symbol_check', 
+            'inp_SessionStart': 'session_start',
+            'inp_SessionEnd': 'session_end',
+            
+            # Fibonacci mappings from current inconsistent names
+            'fib_level_1_1': 'fib_primary_buy_tp',
+            'fib_level_1_05': 'fib_primary_buy_entry',
+            'fib_level_1_0': 'fib_session_high',
+            'fib_level_0_0': 'fib_session_low',
+            'fib_level_neg_05': 'fib_primary_sell_entry',
+            'fib_level_neg_1': 'fib_primary_sell_tp',
+            'fib_level_primary_buy_sl': 'fib_primary_buy_sl',
+            'fib_level_primary_sell_sl': 'fib_primary_sell_sl',
+            
+            # Hedge fields
+            'fib_level_hedge_buy': 'fib_level_hedge_buy',  # Keep as is if correct
+            'fib_level_hedge_sell': 'fib_level_hedge_sell',  # Keep as is if correct
+            'fib_level_hedge_buy_sl': 'fib_level_hedge_buy_sl',  # Keep as is if correct
+            'fib_level_hedge_sell_sl': 'fib_level_hedge_sell_sl',  # Keep as is if correct
+            'fib_level_hedge_buy_tp': 'fib_hedge_buy_tp',
+            'fib_level_hedge_sell_tp': 'fib_hedge_sell_tp',
+            
+            # Timeout fields
+            'inp_PrimaryPendingTimeout': 'primary_pending_timeout',
+            'inp_PrimaryPositionTimeout': 'primary_position_timeout',
+            'inp_HedgingPendingTimeout': 'hedging_pending_timeout',
+            'inp_HedgingPositionTimeout': 'hedging_position_timeout',
+        }
         
-        if old_field_pattern and not new_field_pattern:
-            print('🔄 OLD field structure detected - field rename migration needed')
-            field_structure['migration_needed'] = True
-            field_structure['current_structure'] = 'old'
-        elif new_field_pattern and not old_field_pattern:
-            print('✅ NEW field structure detected - migration already completed')
-            field_structure['migration_needed'] = False
-            field_structure['current_structure'] = 'new'
-        elif old_field_pattern and new_field_pattern:
-            print('⚠️  MIXED field structure detected - partial migration state')
-            field_structure['migration_needed'] = True
-            field_structure['current_structure'] = 'mixed'
-        else:
-            print('❓ Unknown field structure - will create fresh migrations')
-            field_structure['migration_needed'] = True
-            field_structure['current_structure'] = 'unknown'
-    else:
-        print('📝 No configurations table - fresh installation')
-        field_structure['migration_needed'] = True
-        field_structure['current_structure'] = 'fresh'
+        # Apply field renames where source exists and target doesn't
+        renamed_count = 0
+        for old_name, new_name in field_mappings.items():
+            if old_name in current_fields and new_name not in current_fields and old_name != new_name:
+                try:
+                    cursor.execute(f'ALTER TABLE configurations_tradingconfiguration RENAME COLUMN \"{old_name}\" TO {new_name};')
+                    print(f'   ✅ Renamed {old_name} → {new_name}')
+                    renamed_count += 1
+                except Exception as e:
+                    print(f'   ⚠️  Failed to rename {old_name}: {e}')
+        
+        # Add missing fields with defaults
+        required_fields = {
+            'allowed_symbol': ('VARCHAR(20)', \"'US30'\"),
+            'strict_symbol_check': ('BOOLEAN', 'true'),
+            'session_start': ('VARCHAR(5)', \"'08:45'\"),
+            'session_end': ('VARCHAR(5)', \"'10:00'\"),
+            'fib_primary_buy_tp': ('NUMERIC(8,5)', '1.325'),
+            'fib_primary_buy_entry': ('NUMERIC(8,5)', '1.05'),
+            'fib_session_high': ('NUMERIC(8,5)', '1.0'),
+            'fib_session_low': ('NUMERIC(8,5)', '0.0'),
+            'fib_primary_sell_entry': ('NUMERIC(8,5)', '-0.05'),
+            'fib_primary_sell_tp': ('NUMERIC(8,5)', '-0.325'),
+            'fib_primary_buy_sl': ('NUMERIC(8,5)', '-0.05'),
+            'fib_primary_sell_sl': ('NUMERIC(8,5)', '1.05'),
+            'fib_level_hedge_buy': ('NUMERIC(8,5)', '1.05'),
+            'fib_level_hedge_sell': ('NUMERIC(8,5)', '-0.05'),
+            'fib_level_hedge_buy_sl': ('NUMERIC(8,5)', '0.0'),
+            'fib_level_hedge_sell_sl': ('NUMERIC(8,5)', '1.0'),
+            'fib_hedge_buy_tp': ('NUMERIC(8,5)', '1.3'),
+            'fib_hedge_sell_tp': ('NUMERIC(8,5)', '-0.3'),
+            'primary_pending_timeout': ('INTEGER', '30'),
+            'primary_position_timeout': ('INTEGER', '60'),
+            'hedging_pending_timeout': ('INTEGER', '30'),
+            'hedging_position_timeout': ('INTEGER', '60'),
+        }
+        
+        # Re-check current fields after renames
+        cursor.execute(\"\"\"
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'configurations_tradingconfiguration';
+        \"\"\")
+        current_fields = [row[0] for row in cursor.fetchall()]
+        
+        added_count = 0
+        for field_name, (field_type, default_value) in required_fields.items():
+            if field_name not in current_fields:
+                try:
+                    cursor.execute(f'ALTER TABLE configurations_tradingconfiguration ADD COLUMN {field_name} {field_type} DEFAULT {default_value};')
+                    print(f'   ➕ Added missing field: {field_name}')
+                    added_count += 1
+                except Exception as e:
+                    print(f'   ⚠️  Failed to add {field_name}: {e}')
+        
+        print(f'✅ Custom mapping complete: {renamed_count} renamed, {added_count} added')
 
-# Store the analysis result
-import json
-with open('/tmp/db_analysis.json', 'w') as f:
-    json.dump({
-        'tables_exist': tables_exist,
-        'field_structure': field_structure
-    }, f)
-
-print(f'💾 Database analysis complete - {len(tables_exist)} tables found')
-"
-
-# Load analysis results
-DB_ANALYSIS=$(python -c "
-import json
-try:
-    with open('/tmp/db_analysis.json', 'r') as f:
-        data = json.load(f)
-    print(f\"{data['field_structure']['migration_needed']}|{data['field_structure']['current_structure']}|{len(data['tables_exist'])}\")
-except:
-    print('True|unknown|0')
-")
-
-IFS='|' read -r MIGRATION_NEEDED CURRENT_STRUCTURE TABLE_COUNT <<< "$DB_ANALYSIS"
-
-echo "📊 Migration Strategy: $CURRENT_STRUCTURE structure, $TABLE_COUNT tables, migration needed: $MIGRATION_NEEDED"
-
-# Handle migrations based on current state
-if [ "$CURRENT_STRUCTURE" = "fresh" ] || [ "$TABLE_COUNT" = "0" ]; then
-    echo "🆕 Fresh installation - creating initial migrations..."
-    
-    # Clean any existing migration files for fresh start
-    for app in licenses configurations; do
-        if [ -d "$app/migrations" ]; then
-            find "$app/migrations/" -name "*.py" -not -name "__init__.py" -delete 2>/dev/null || true
-            find "$app/migrations/" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-            echo "   Cleaned $app migrations"
-        fi
-    done
-    
-    # Create fresh migrations with new field names
-    python manage.py makemigrations configurations --noinput || {
-        echo "❌ Failed to create configurations migrations"
-        exit 1
-    }
-    
-    python manage.py makemigrations licenses --noinput || {
-        echo "❌ Failed to create licenses migrations"
-        exit 1
-    }
-    
-    # Apply migrations
-    python manage.py migrate --noinput || {
-        echo "❌ Failed to apply fresh migrations"
-        exit 1
-    }
-    
-    echo "✅ Fresh migrations applied successfully"
-
-elif [ "$CURRENT_STRUCTURE" = "old" ]; then
-    echo "🔄 Old field structure detected - applying field rename migrations..."
-    
-    # Create field rename migration
-    echo "📝 Creating field rename migration..."
-    python manage.py makemigrations configurations --name rename_fib_fields --noinput || {
-        echo "❌ Failed to create field rename migration"
-        exit 1
-    }
-    
-    # Apply the field rename migration
-    echo "🚀 Applying field rename migration..."
-    python manage.py migrate configurations --noinput || {
-        echo "❌ Failed to apply field rename migration"
-        exit 1
-    }
-    
-    # Apply any other pending migrations
-    python manage.py migrate --noinput || {
-        echo "❌ Failed to apply remaining migrations"
-        exit 1
-    }
-    
-    echo "✅ Field rename migration completed successfully"
-
-elif [ "$CURRENT_STRUCTURE" = "new" ]; then
-    echo "✅ New field structure already in place - checking for pending migrations..."
-    
-    # Just apply any pending migrations
-    python manage.py migrate --noinput || {
-        echo "❌ Failed to apply pending migrations"
-        exit 1
-    }
-    
-    echo "✅ All migrations up to date"
-
-else
-    echo "⚠️  Mixed or unknown field structure - attempting recovery..."
-    
-    # Try to create and apply migrations carefully
-    python manage.py makemigrations --noinput || echo "⚠️  Migration creation had issues"
-    python manage.py migrate --noinput || {
-        echo "❌ Migration failed - manual intervention may be required"
-        exit 1
-    }
-    
-    echo "✅ Recovery migration completed"
-fi
+" || {
+            echo "❌ Custom field mapping failed"
+            exit 1
+        }
+        
+        # Now apply any remaining Django migrations
+        echo "🔄 Applying Django migrations after custom mapping..."
+        python manage.py migrate --noinput || {
+            echo "⚠️  Some Django migrations may have failed, but continuing..."
+        }
+        ;;
+        
+    *)
+        echo "❓ Unknown strategy - attempting basic migration..."
+        python manage.py migrate --noinput || {
+            echo "❌ Migration failed"
+            exit 1
+        }
+        ;;
+esac
 
 # Verify final database state
 echo "🔍 Final database verification..."
@@ -244,8 +293,8 @@ required_tables = [
     'licenses_license'
 ]
 
-missing_tables = []
 with connection.cursor() as cursor:
+    missing_tables = []
     for table in required_tables:
         cursor.execute(f\"\"\"
             SELECT EXISTS (
@@ -257,30 +306,23 @@ with connection.cursor() as cursor:
             missing_tables.append(table)
 
 if missing_tables:
-    print(f'❌ Still missing tables: {missing_tables}')
+    print(f'❌ Missing tables: {missing_tables}')
     exit(1)
-else:
-    print('✅ All required tables verified')
 
-# Verify new field structure
-try:
-    cursor.execute(\"\"\"
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'configurations_tradingconfiguration'
-        AND (column_name LIKE 'fib_session_%' OR column_name LIKE 'fib_primary_%')
-        ORDER BY column_name;
-    \"\"\")
-    
-    new_fields = [row[0] for row in cursor.fetchall()]
-    if new_fields:
-        print(f'✅ New field structure confirmed: {len(new_fields)} new fields found')
-        print(f'   Sample fields: {new_fields[:3]}...')
-    else:
-        print('⚠️  New field structure not detected - may still have old fields')
-        
-except Exception as e:
-    print(f'⚠️  Field verification failed: {e}')
+# Check that we have the required fields
+cursor.execute(\"\"\"
+    SELECT column_name 
+    FROM information_schema.columns 
+    WHERE table_name = 'configurations_tradingconfiguration'
+    AND column_name IN ('allowed_symbol', 'fib_session_high', 'fib_primary_buy_entry')
+    ORDER BY column_name;
+\"\"\")
+
+key_fields = [row[0] for row in cursor.fetchall()]
+if len(key_fields) >= 3:
+    print(f'✅ Key fields verified: {key_fields}')
+else:
+    print(f'⚠️  Some key fields may be missing: {key_fields}')
 
 print('✅ Database verification completed')
 "
@@ -295,16 +337,6 @@ echo "🌐 Application URLs:"
 echo "   📱 Admin: https://mt5-dashboard.onrender.com/admin/"
 echo "   🏠 Dashboard: https://mt5-dashboard.onrender.com/dashboard/"
 echo "   🤖 API: https://mt5-dashboard.onrender.com/api/validate/"
-echo ""
-echo "🔄 Field Rename Migration Status:"
-echo "   ✅ Database schema updated with new field names"
-echo "   ✅ API maintains backward compatibility"
-echo "   ✅ Existing data preserved during migration"
-echo ""
-echo "📝 Next Steps:"
-echo "   1. Test admin interface with new field names"
-echo "   2. Verify API endpoints return both old and new field names"
-echo "   3. Confirm existing MT5 robots continue working"
 echo ""
 
 # Start the application (MUST be the last line)
