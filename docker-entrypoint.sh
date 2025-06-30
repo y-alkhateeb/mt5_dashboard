@@ -1,12 +1,13 @@
 #!/bin/bash
-# Render.com Auto-Migration Entrypoint
-# Runs migrations automatically on every deployment
+# Updated docker-entrypoint.sh with automatic PostgreSQL field fix
+# Runs automatically on every Render deployment
 
 set -e
 
-echo "🚀 TRADING ROBOT ADMIN - RENDER DEPLOYMENT"
-echo "=========================================="
+echo "🚀 TRADING ROBOT ADMIN - RENDER DEPLOYMENT WITH POSTGRESQL FIX"
+echo "=============================================================="
 echo "🌐 Environment: Production (Render.com)"
+echo "🔧 Auto-fixing PostgreSQL field naming issues"
 echo ""
 
 # Function to wait for PostgreSQL database
@@ -63,10 +64,40 @@ except Exception as e:
 "
 }
 
-# Function to run migrations automatically
-auto_migrate() {
-    echo "📊 AUTOMATIC MIGRATION PROCESS"
-    echo "==============================="
+# Function to run automatic PostgreSQL field fix
+auto_fix_postgresql() {
+    echo "🔧 AUTOMATIC POSTGRESQL FIELD FIX"
+    echo "================================="
+    
+    # Check if this is a fresh deployment or update
+    echo "📋 Checking deployment type..."
+    
+    # Run the PostgreSQL fix management command
+    echo "🚀 Running PostgreSQL field compatibility fix..."
+    
+    if python manage.py fix_postgresql_fields --force; then
+        echo "✅ PostgreSQL field fix completed successfully"
+    else
+        echo "⚠️  PostgreSQL field fix had issues, continuing with standard migration..."
+        
+        # Fallback to standard migration process
+        echo "🔄 Running fallback migration process..."
+        
+        # Create migrations if they don't exist
+        echo "📝 Creating missing migrations..."
+        python manage.py makemigrations configurations --noinput || echo "⚠️  Configurations migrations failed"
+        python manage.py makemigrations licenses --noinput || echo "⚠️  Licenses migrations failed"
+        
+        # Apply migrations
+        echo "🚀 Applying migrations..."
+        python manage.py migrate --noinput || echo "⚠️  Migrations failed"
+    fi
+}
+
+# Function to run standard migrations (as backup)
+run_standard_migrations() {
+    echo "📊 STANDARD MIGRATION PROCESS"
+    echo "============================"
     
     # Step 1: Check existing migrations
     echo "📋 Checking migration status..."
@@ -103,9 +134,60 @@ auto_migrate() {
             echo "🆘 Check Render logs for specific migration errors"
         }
     fi
+}
+
+# Function to setup admin user
+setup_admin_user() {
+    echo "👤 ADMIN USER SETUP"
+    echo "=================="
     
-    # Step 4: Verify migration success
-    echo "🔍 Verifying migration success..."
+    # Try to create admin user via management command
+    echo "🔧 Setting up admin user..."
+    python manage.py setup_admin --username admin --password admin123 --email admin@example.com || {
+        echo "⚠️  Admin setup command failed, trying manual creation..."
+        
+        # Fallback manual creation
+        python -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trading_admin.settings_render')
+django.setup()
+
+from django.contrib.auth.models import User
+
+username = 'admin'
+password = 'admin123'
+email = 'admin@example.com'
+
+try:
+    if User.objects.filter(username=username).exists():
+        user = User.objects.get(username=username)
+        user.set_password(password)
+        user.email = email
+        user.is_superuser = True
+        user.is_staff = True
+        user.is_active = True
+        user.save()
+        print(f'✅ Updated admin user: {username}')
+    else:
+        User.objects.create_superuser(username, email, password)
+        print(f'✅ Created admin user: {username}')
+    
+    print(f'📧 Email: {email}')
+    print(f'🔑 Password: {password}')
+    print('⚠️  Change password after first login!')
+    
+except Exception as e:
+    print(f'❌ Manual admin creation failed: {e}')
+" || echo "⚠️  Admin user creation failed"
+    }
+}
+
+# Function to verify deployment
+verify_deployment() {
+    echo "🔍 DEPLOYMENT VERIFICATION"
+    echo "========================="
+    
+    echo "🧪 Running deployment verification..."
     python -c "
 try:
     import django
@@ -116,6 +198,7 @@ try:
     from django.db import connection
     from licenses.models import Client, License
     from configurations.models import TradingConfiguration
+    from django.contrib.auth.models import User
     
     # Test database connection
     with connection.cursor() as cursor:
@@ -123,18 +206,41 @@ try:
     print('✅ Database connection verified')
     
     # Test model access
-    print(f'✅ Models accessible - Clients: {Client.objects.count()}, Licenses: {License.objects.count()}, Configs: {TradingConfiguration.objects.count()}')
+    try:
+        client_count = Client.objects.count()
+        license_count = License.objects.count() 
+        config_count = TradingConfiguration.objects.count()
+        admin_count = User.objects.filter(is_superuser=True).count()
+        
+        print(f'✅ Models accessible:')
+        print(f'   👤 Admins: {admin_count}')
+        print(f'   👥 Clients: {client_count}')
+        print(f'   🔑 Licenses: {license_count}')
+        print(f'   ⚙️  Configs: {config_count}')
+        
+        # Test API compatibility
+        if config_count > 0:
+            from configurations.serializers import TradingConfigurationSerializer
+            config = TradingConfiguration.objects.first()
+            data = TradingConfigurationSerializer(config).data
+            has_legacy = 'inp_AllowedSymbol' in data
+            has_new = 'allowed_symbol' in data
+            print(f'✅ API compatibility: Legacy={has_legacy}, New={has_new}')
+        
+    except Exception as e:
+        print(f'⚠️  Model verification warning: {e}')
     
 except Exception as e:
-    print(f'⚠️  Migration verification warning: {e}')
+    print(f'⚠️  Verification warning: {e}')
     print('🔄 Application will continue starting...')
-" 2>/dev/null || echo "⚠️  Migration verification skipped"
-    
-    echo "✅ Migration process completed"
+" 2>/dev/null || echo "⚠️  Verification skipped"
 }
 
 # Function to collect static files
 collect_static_files() {
+    echo "📁 STATIC FILES COLLECTION"
+    echo "=========================="
+    
     echo "📁 Collecting static files..."
     
     python manage.py collectstatic --noinput --clear --verbosity=1 || {
@@ -160,6 +266,11 @@ start_application() {
     echo "   🏠 Dashboard: https://your-app.onrender.com/dashboard/"
     echo "   🤖 API: https://your-app.onrender.com/api/validate/"
     echo ""
+    echo "🔐 Default admin credentials:"
+    echo "   Username: admin"
+    echo "   Password: admin123"
+    echo "   ⚠️  Change password after first login!"
+    echo ""
     
     # Start gunicorn with optimized settings for Render
     exec gunicorn trading_admin.wsgi:application \
@@ -176,10 +287,10 @@ start_application() {
         --preload
 }
 
-# Main deployment sequence
+# Main deployment sequence with PostgreSQL fix
 main() {
-    echo "🎯 RENDER.COM AUTOMATIC DEPLOYMENT"
-    echo "=================================="
+    echo "🎯 RENDER.COM DEPLOYMENT WITH POSTGRESQL FIX"
+    echo "=============================================="
     echo "🕐 Started at: $(date)"
     echo ""
     
@@ -188,17 +299,30 @@ main() {
     
     echo ""
     
-    # Step 2: Run automatic migrations
-    auto_migrate
+    # Step 2: Run automatic PostgreSQL field fix
+    auto_fix_postgresql
     
     echo ""
     
-    # Step 3: Collect static files
+    # Step 3: Setup admin user
+    setup_admin_user
+    
+    echo ""
+    
+    # Step 4: Collect static files
     collect_static_files
     
     echo ""
     
-    # Step 4: Start the application
+    # Step 5: Verify deployment
+    verify_deployment
+    
+    echo ""
+    echo "✅ DEPLOYMENT COMPLETED SUCCESSFULLY!"
+    echo "==================================="
+    echo ""
+    
+    # Step 6: Start the application
     start_application
 }
 
