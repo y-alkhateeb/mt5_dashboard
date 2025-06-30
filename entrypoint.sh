@@ -15,9 +15,12 @@ exec gunicorn trading_admin.wsgi:application \
     --max-requests-jitter 100 \
     --preload \
     --log-level info
-    
+
 echo "Running database migrations..."
+rm -rf licenses/migrations/ configurations/migrations/ 2>/dev/null
 # For Django:
+python manage.py makemigrations licenses
+python manage.py makemigrations configurations
 python manage.py migrate --noinput
 
 # For Flask (with Flask-Migrate/Alembic):
