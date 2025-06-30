@@ -1,4 +1,5 @@
 # File: configurations/forms.py
+# Fixed for PostgreSQL field names
 
 from django import forms
 from crispy_forms.helper import FormHelper
@@ -9,39 +10,40 @@ from .models import TradingConfiguration
 class TradingConfigurationForm(forms.ModelForm):
     """
     Enhanced form for Trading Configuration with MT5-specific field layout
+    Updated for PostgreSQL compatibility
     """
     
     class Meta:
         model = TradingConfiguration
-        exclude = ['license', 'created_at', 'updated_at']
+        exclude = ['created_at', 'updated_at']
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
         # Customize field widgets and help text
-        self.fields['inp_AllowedSymbol'].widget.attrs.update({
+        self.fields['allowed_symbol'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'e.g., US30, EURUSD, XAUUSD'
         })
         
-        self.fields['inp_SessionStart'].widget.attrs.update({
+        self.fields['session_start'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'HH:MM (e.g., 08:45)'
         })
         
-        self.fields['inp_SessionEnd'].widget.attrs.update({
+        self.fields['session_end'].widget.attrs.update({
             'class': 'form-control', 
             'placeholder': 'HH:MM (e.g., 10:00)'
         })
         
         # Add step attribute to decimal fields for better UX
         decimal_fields = [
-            'inp_FibLevel_1_1', 'inp_FibLevel_1_05', 'inp_FibLevel_1_0',
-            'inp_FibLevel_PrimaryBuySL', 'inp_FibLevel_PrimarySellSL',
-            'inp_FibLevel_HedgeBuy', 'inp_FibLevel_HedgeSell',
-            'inp_FibLevel_HedgeBuySL', 'inp_FibLevel_HedgeSellSL',
-            'inp_FibLevel_0_0', 'inp_FibLevel_Neg_05', 'inp_FibLevel_Neg_1',
-            'inp_FibLevel_HedgeBuyTP', 'inp_FibLevel_HedgeSellTP'
+            'fib_level_1_1', 'fib_level_1_05', 'fib_level_1_0',
+            'fib_level_primary_buy_sl', 'fib_level_primary_sell_sl',
+            'fib_level_hedge_buy', 'fib_level_hedge_sell',
+            'fib_level_hedge_buy_sl', 'fib_level_hedge_sell_sl',
+            'fib_level_0_0', 'fib_level_neg_05', 'fib_level_neg_1',
+            'fib_level_hedge_buy_tp', 'fib_level_hedge_sell_tp'
         ]
         
         for field_name in decimal_fields:
@@ -58,8 +60,8 @@ class TradingConfigurationForm(forms.ModelForm):
                     Fieldset(
                         '═══ Symbol Validation ═══',
                         Row(
-                            Column('inp_AllowedSymbol', css_class='form-group col-md-8 mb-3'),
-                            Column('inp_StrictSymbolCheck', css_class='form-group col-md-4 mb-3'),
+                            Column('allowed_symbol', css_class='form-group col-md-8 mb-3'),
+                            Column('strict_symbol_check', css_class='form-group col-md-4 mb-3'),
                         ),
                         HTML('<small class="text-muted">Configure which symbols the robot can trade</small>'),
                         css_class='border p-3 mb-4 rounded bg-light'
@@ -67,8 +69,8 @@ class TradingConfigurationForm(forms.ModelForm):
                     Fieldset(
                         '═══ Session Configuration ═══',
                         Row(
-                            Column('inp_SessionStart', css_class='form-group col-md-6 mb-3'),
-                            Column('inp_SessionEnd', css_class='form-group col-md-6 mb-3'),
+                            Column('session_start', css_class='form-group col-md-6 mb-3'),
+                            Column('session_end', css_class='form-group col-md-6 mb-3'),
                         ),
                         HTML('<small class="text-muted">Set trading session times in HH:MM format</small>'),
                         css_class='border p-3 mb-4 rounded bg-light'
@@ -79,9 +81,9 @@ class TradingConfigurationForm(forms.ModelForm):
                     Fieldset(
                         '═══ Primary Fibonacci Levels ═══',
                         Row(
-                            Column('inp_FibLevel_1_1', css_class='form-group col-md-4 mb-3'),
-                            Column('inp_FibLevel_1_05', css_class='form-group col-md-4 mb-3'),
-                            Column('inp_FibLevel_1_0', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_level_1_1', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_level_1_05', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_level_1_0', css_class='form-group col-md-4 mb-3'),
                         ),
                         HTML('<small class="text-muted">Main Fibonacci retracement levels</small>'),
                         css_class='border p-3 mb-4 rounded bg-light'
@@ -90,12 +92,12 @@ class TradingConfigurationForm(forms.ModelForm):
                     Fieldset(
                         '═══ Stop Loss Levels ═══',
                         Row(
-                            Column('inp_FibLevel_PrimaryBuySL', css_class='form-group col-md-6 mb-3'),
-                            Column('inp_FibLevel_PrimarySellSL', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_primary_buy_sl', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_primary_sell_sl', css_class='form-group col-md-6 mb-3'),
                         ),
                         Row(
-                            Column('inp_FibLevel_HedgeBuySL', css_class='form-group col-md-6 mb-3'),
-                            Column('inp_FibLevel_HedgeSellSL', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_hedge_buy_sl', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_hedge_sell_sl', css_class='form-group col-md-6 mb-3'),
                         ),
                         HTML('<small class="text-muted">Configure stop loss levels for risk management</small>'),
                         css_class='border p-3 mb-4 rounded bg-warning-light'
@@ -104,17 +106,17 @@ class TradingConfigurationForm(forms.ModelForm):
                     Fieldset(
                         '═══ Additional Levels ═══',
                         Row(
-                            Column('inp_FibLevel_0_0', css_class='form-group col-md-4 mb-3'),
-                            Column('inp_FibLevel_Neg_05', css_class='form-group col-md-4 mb-3'),
-                            Column('inp_FibLevel_Neg_1', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_level_0_0', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_level_neg_05', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_level_neg_1', css_class='form-group col-md-4 mb-3'),
                         ),
                         Row(
-                            Column('inp_FibLevel_HedgeBuy', css_class='form-group col-md-6 mb-3'),
-                            Column('inp_FibLevel_HedgeSell', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_hedge_buy', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_hedge_sell', css_class='form-group col-md-6 mb-3'),
                         ),
                         Row(
-                            Column('inp_FibLevel_HedgeBuyTP', css_class='form-group col-md-6 mb-3'),
-                            Column('inp_FibLevel_HedgeSellTP', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_hedge_buy_tp', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_hedge_sell_tp', css_class='form-group col-md-6 mb-3'),
                         ),
                         HTML('<small class="text-muted">Hedging and take profit levels</small>'),
                         css_class='border p-3 mb-4 rounded bg-success-light'
@@ -125,12 +127,12 @@ class TradingConfigurationForm(forms.ModelForm):
                     Fieldset(
                         '═══ Timeout Configuration (Minutes) ═══',
                         Row(
-                            Column('inp_PrimaryPendingTimeout', css_class='form-group col-md-6 mb-3'),
-                            Column('inp_PrimaryPositionTimeout', css_class='form-group col-md-6 mb-3'),
+                            Column('primary_pending_timeout', css_class='form-group col-md-6 mb-3'),
+                            Column('primary_position_timeout', css_class='form-group col-md-6 mb-3'),
                         ),
                         Row(
-                            Column('inp_HedgingPendingTimeout', css_class='form-group col-md-6 mb-3'),
-                            Column('inp_HedgingPositionTimeout', css_class='form-group col-md-6 mb-3'),
+                            Column('hedging_pending_timeout', css_class='form-group col-md-6 mb-3'),
+                            Column('hedging_position_timeout', css_class='form-group col-md-6 mb-3'),
                         ),
                         HTML('''
                             <div class="alert alert-info mt-3">
@@ -155,16 +157,16 @@ class TradingConfigurationForm(forms.ModelForm):
             )
         )
         
-    def clean_inp_SessionStart(self):
+    def clean_session_start(self):
         """Validate session start time format"""
-        value = self.cleaned_data['inp_SessionStart']
+        value = self.cleaned_data['session_start']
         if not self._is_valid_time_format(value):
             raise forms.ValidationError('Please enter time in HH:MM format (e.g., 08:45)')
         return value
     
-    def clean_inp_SessionEnd(self):
+    def clean_session_end(self):
         """Validate session end time format"""
-        value = self.cleaned_data['inp_SessionEnd']
+        value = self.cleaned_data['session_end']
         if not self._is_valid_time_format(value):
             raise forms.ValidationError('Please enter time in HH:MM format (e.g., 17:30)')
         return value
