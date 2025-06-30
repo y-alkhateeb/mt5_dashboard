@@ -8,6 +8,12 @@ echo "🌐 Port configuration: ${PORT:-10000}"
 # Set Django settings for production
 export DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-trading_admin.settings_render}
 
+echo "🗑️  Removing problematic migration files..."
+rm -f configurations/migrations/0002_remove_tradingconfiguration_inp_allowedsymbol_and_more.py
+rm -f configurations/migrations/0002_rename_inp_allowedsymbol_tradingconfiguration_allowed_symbol_and_more.py
+rm -f configurations/migrations/0002_*.py
+
+
 # Wait for PostgreSQL database
 echo "⏳ Waiting for PostgreSQL database..."
 python -c "
