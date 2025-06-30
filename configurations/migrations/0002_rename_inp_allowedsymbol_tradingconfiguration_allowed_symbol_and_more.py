@@ -18,22 +18,22 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_0_0',
-            new_name='fib_level_0_0',
+            new_name='fib_session_low',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_1_0',
-            new_name='fib_level_1_0',
+            new_name='fib_session_high',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_1_05',
-            new_name='fib_level_1_05',
+            new_name='fib_primary_buy_entry',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_1_1',
-            new_name='fib_level_1_1',
+            new_name='fib_primary_buy_tp',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_HedgeBuyTP',
-            new_name='fib_level_hedge_buy_tp',
+            new_name='fib_hedge_buy_tp',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
@@ -63,27 +63,27 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_HedgeSellTP',
-            new_name='fib_level_hedge_sell_tp',
+            new_name='fib_hedge_sell_tp',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_Neg_05',
-            new_name='fib_level_neg_05',
+            new_name='fib_primary_sell_entry',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_Neg_1',
-            new_name='fib_level_neg_1',
+            new_name='fib_primary_sell_tp',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_PrimaryBuySL',
-            new_name='fib_level_primary_buy_sl',
+            new_name='fib_primary_buy_sl',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',
             old_name='inp_FibLevel_PrimarySellSL',
-            new_name='fib_level_primary_sell_sl',
+            new_name='fib_primary_sell_sl',
         ),
         migrations.RenameField(
             model_name='tradingconfiguration',

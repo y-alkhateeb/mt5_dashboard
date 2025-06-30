@@ -33,12 +33,12 @@ class TradingConfigurationAdmin(admin.ModelAdmin):
         
         ('═══ Enhanced Fibonacci Levels ═══', {
             'fields': (
-                ('fib_level_1_1', 'fib_level_1_05', 'fib_level_1_0'),
-                ('fib_level_primary_buy_sl', 'fib_level_primary_sell_sl'),
+                ('fib_primary_buy_tp', 'fib_primary_buy_entry', 'fib_session_high'),
+                ('fib_primary_buy_sl', 'fib_primary_sell_sl'),
                 ('fib_level_hedge_buy', 'fib_level_hedge_sell'),
                 ('fib_level_hedge_buy_sl', 'fib_level_hedge_sell_sl'),
-                ('fib_level_0_0', 'fib_level_neg_05', 'fib_level_neg_1'),
-                ('fib_level_hedge_buy_tp', 'fib_level_hedge_sell_tp'),
+                ('fib_session_low', 'fib_primary_sell_entry', 'fib_primary_sell_tp'),
+                ('fib_hedge_buy_tp', 'fib_hedge_sell_tp'),
             ),
             'description': 'Configure Fibonacci retracement levels for trading strategy',
             'classes': ('collapse',)

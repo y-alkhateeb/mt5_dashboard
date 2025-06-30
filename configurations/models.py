@@ -42,76 +42,88 @@ class TradingConfiguration(models.Model):
         help_text="Session End Time (HH:MM format)"
     )
     
-    # ═══ Enhanced Fibonacci Levels ═══
-    fib_level_1_1 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.325,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Fibonacci Level 1.1"
-    )
-    fib_level_1_05 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.05,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Fibonacci Level 1.05 (Buy Entry)"
-    )
-    fib_level_1_0 = models.DecimalField(
+    # ═══ Fibonacci Levels ═══
+    fib_session_high = models.DecimalField(
         max_digits=8, decimal_places=5, default=1.0,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Fibonacci Level 1.0 (Session High)"
+        help_text="Session High"
     )
-    fib_level_primary_buy_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.05,
+
+    fib_session_low = models.DecimalField(
+        max_digits=8, decimal_places=5, default=0.0,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Primary Buy Stop Loss Level"
+        help_text="Session Low"
     )
-    fib_level_primary_sell_sl = models.DecimalField(
+
+    fib_primary_buy_entry = models.DecimalField(
         max_digits=8, decimal_places=5, default=1.05,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Primary Sell Stop Loss Level"
+        help_text="Primary Buy Entry"
     )
+
+    fib_primary_buy_tp = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.325,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Primary Buy Take Profit (Buy TP)"
+    )
+
+    fib_primary_buy_sl = models.DecimalField(
+        max_digits=8, decimal_places=5, default=-0.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Primary Buy Stop Loss"
+    )
+    # Primary Sell Levels
+
+    fib_primary_sell_entry = models.DecimalField(
+        max_digits=8, decimal_places=5, default=-0.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Primary Sell Entry"
+    )
+
+    fib_primary_sell_tp = models.DecimalField(
+        max_digits=8, decimal_places=5, default=-0.325,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Primary Sell Take Profit (Sell TP)"
+    )
+    
+    fib_primary_sell_sl = models.DecimalField(
+        max_digits=8, decimal_places=5, default=1.05,
+        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
+        help_text="Primary Sell Stop Loss"
+    )
+
+    # ═══ Hedging Levels ═══
     fib_level_hedge_buy = models.DecimalField(
         max_digits=8, decimal_places=5, default=1.05,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Buy Entry Level"
+        help_text="Hedging Buy Entry"
     )
     fib_level_hedge_sell = models.DecimalField(
         max_digits=8, decimal_places=5, default=-0.05,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Sell Entry Level"
+        help_text="Hedging Sell Entry"
     )
     fib_level_hedge_buy_sl = models.DecimalField(
         max_digits=8, decimal_places=5, default=0.0,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Buy Stop Loss Level"
+        help_text="Hedging Buy Stop Loss"
     )
     fib_level_hedge_sell_sl = models.DecimalField(
         max_digits=8, decimal_places=5, default=1.0,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Sell Stop Loss Level"
+        help_text="Hedging Sell Stop Loss"
     )
-    fib_level_0_0 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=0.0,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Fibonacci Level 0.0 (Session Low)"
-    )
-    fib_level_neg_05 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.05,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Fibonacci Level -0.05 (Sell Entry)"
-    )
-    fib_level_neg_1 = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.325,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Fibonacci Level -0.325 (Sell TP)"
-    )
-    fib_level_hedge_buy_tp = models.DecimalField(
+    
+    fib_hedge_buy_tp = models.DecimalField(
         max_digits=8, decimal_places=5, default=1.3,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Buy Take Profit Level"
+        help_text="Hedging Buy Take Profit"
     )
-    fib_level_hedge_sell_tp = models.DecimalField(
+    
+    fib_hedge_sell_tp = models.DecimalField(
         max_digits=8, decimal_places=5, default=-0.3,
         validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Sell Take Profit Level"
+        help_text="Hedging Sell Take Profit"
     )
     
     # ═══ Timeout Configuration (Minutes) ═══
@@ -197,23 +209,23 @@ class TradingConfiguration(models.Model):
     
     @property
     def inp_FibLevel_1_1(self):
-        return self.fib_level_1_1
+        return self.fib_primary_buy_tp
     
     @property
     def inp_FibLevel_1_05(self):
-        return self.fib_level_1_05
+        return self.fib_primary_buy_entry
     
     @property
     def inp_FibLevel_1_0(self):
-        return self.fib_level_1_0
+        return self.fib_session_high
     
     @property
     def inp_FibLevel_PrimaryBuySL(self):
-        return self.fib_level_primary_buy_sl
+        return self.fib_primary_buy_sl
     
     @property
     def inp_FibLevel_PrimarySellSL(self):
-        return self.fib_level_primary_sell_sl
+        return self.fib_primary_sell_sl
     
     @property
     def inp_FibLevel_HedgeBuy(self):
@@ -233,23 +245,23 @@ class TradingConfiguration(models.Model):
     
     @property
     def inp_FibLevel_0_0(self):
-        return self.fib_level_0_0
+        return self.fib_session_low
     
     @property
     def inp_FibLevel_Neg_05(self):
-        return self.fib_level_neg_05
+        return self.fib_primary_sell_entry
     
     @property
     def inp_FibLevel_Neg_1(self):
-        return self.fib_level_neg_1
+        return self.fib_primary_sell_tp
     
     @property
     def inp_FibLevel_HedgeBuyTP(self):
-        return self.fib_level_hedge_buy_tp
+        return self.fib_hedge_buy_tp
     
     @property
     def inp_FibLevel_HedgeSellTP(self):
-        return self.fib_level_hedge_sell_tp
+        return self.fib_hedge_sell_tp
     
     @property
     def inp_PrimaryPendingTimeout(self):

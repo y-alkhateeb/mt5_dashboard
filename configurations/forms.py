@@ -38,12 +38,12 @@ class TradingConfigurationForm(forms.ModelForm):
         
         # Add step attribute to decimal fields for better UX
         decimal_fields = [
-            'fib_level_1_1', 'fib_level_1_05', 'fib_level_1_0',
-            'fib_level_primary_buy_sl', 'fib_level_primary_sell_sl',
+            'fib_primary_buy_tp', 'fib_primary_buy_entry', 'fib_session_high',
+            'fib_primary_buy_sl', 'fib_primary_sell_sl',
             'fib_level_hedge_buy', 'fib_level_hedge_sell',
             'fib_level_hedge_buy_sl', 'fib_level_hedge_sell_sl',
-            'fib_level_0_0', 'fib_level_neg_05', 'fib_level_neg_1',
-            'fib_level_hedge_buy_tp', 'fib_level_hedge_sell_tp'
+            'fib_session_low', 'fib_primary_sell_entry', 'fib_primary_sell_tp',
+            'fib_hedge_buy_tp', 'fib_hedge_sell_tp'
         ]
         
         for field_name in decimal_fields:
@@ -76,53 +76,59 @@ class TradingConfigurationForm(forms.ModelForm):
                         css_class='border p-3 mb-4 rounded bg-light'
                     ),
                 ),
-                
-                Tab('📐 Fibonacci Levels',
+
+                Tab('📐 Trade Levels',
                     Fieldset(
-                        '═══ Primary Fibonacci Levels ═══',
+                        '═══ Primary Buy Entry / TP / SL ═══',
                         Row(
-                            Column('fib_level_1_1', css_class='form-group col-md-4 mb-3'),
-                            Column('fib_level_1_05', css_class='form-group col-md-4 mb-3'),
-                            Column('fib_level_1_0', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_primary_buy_entry', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_primary_buy_tp', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_primary_buy_sl', css_class='form-group col-md-4 mb-3'),
                         ),
-                        HTML('<small class="text-muted">Main Fibonacci retracement levels</small>'),
-                        css_class='border p-3 mb-4 rounded bg-light'
+                        HTML('<small class="text-muted">Configure buy levels for primary trades</small>'),
+                        css_class='border p-3 mb-4 rounded bg-primary-light'
                     ),
-                    
+
                     Fieldset(
-                        '═══ Stop Loss Levels ═══',
+                        '═══ Primary Sell Entry / TP / SL ═══',
                         Row(
-                            Column('fib_level_primary_buy_sl', css_class='form-group col-md-6 mb-3'),
-                            Column('fib_level_primary_sell_sl', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_primary_sell_entry', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_primary_sell_tp', css_class='form-group col-md-4 mb-3'),
+                            Column('fib_primary_sell_sl', css_class='form-group col-md-4 mb-3'),
                         ),
-                        Row(
-                            Column('fib_level_hedge_buy_sl', css_class='form-group col-md-6 mb-3'),
-                            Column('fib_level_hedge_sell_sl', css_class='form-group col-md-6 mb-3'),
-                        ),
-                        HTML('<small class="text-muted">Configure stop loss levels for risk management</small>'),
-                        css_class='border p-3 mb-4 rounded bg-warning-light'
+                        HTML('<small class="text-muted">Configure sell levels for primary trades</small>'),
+                        css_class='border p-3 mb-4 rounded bg-danger-light'
                     ),
-                    
+
                     Fieldset(
-                        '═══ Additional Levels ═══',
-                        Row(
-                            Column('fib_level_0_0', css_class='form-group col-md-4 mb-3'),
-                            Column('fib_level_neg_05', css_class='form-group col-md-4 mb-3'),
-                            Column('fib_level_neg_1', css_class='form-group col-md-4 mb-3'),
-                        ),
+                        '═══ Hedging Configuration ═══',
                         Row(
                             Column('fib_level_hedge_buy', css_class='form-group col-md-6 mb-3'),
                             Column('fib_level_hedge_sell', css_class='form-group col-md-6 mb-3'),
                         ),
                         Row(
-                            Column('fib_level_hedge_buy_tp', css_class='form-group col-md-6 mb-3'),
-                            Column('fib_level_hedge_sell_tp', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_hedge_buy_tp', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_hedge_sell_tp', css_class='form-group col-md-6 mb-3'),
                         ),
-                        HTML('<small class="text-muted">Hedging and take profit levels</small>'),
+                        Row(
+                            Column('fib_level_hedge_buy_sl', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_level_hedge_sell_sl', css_class='form-group col-md-6 mb-3'),
+                        ),
+                        HTML('<small class="text-muted">Hedging entry, SL, and TP levels</small>'),
                         css_class='border p-3 mb-4 rounded bg-success-light'
                     ),
+
+                    Fieldset(
+                        '═══ Additional Session Levels ═══',
+                        Row(
+                            Column('fib_session_high', css_class='form-group col-md-6 mb-3'),
+                            Column('fib_session_low', css_class='form-group col-md-6 mb-3'),
+                        ),
+                        HTML('<small class="text-muted">High and low session-based levels</small>'),
+                        css_class='border p-3 mb-4 rounded bg-light'
+                    ),
                 ),
-                
+
                 Tab('⏱️ Timeouts',
                     Fieldset(
                         '═══ Timeout Configuration (Minutes) ═══',
