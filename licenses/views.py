@@ -27,6 +27,25 @@ class BotValidationAPIView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [BotValidationThrottle]
     
+    def get_friendly_validation_message(self, serializer_errors):
+        """Convert serializer errors to user-friendly messages"""
+        field_messages = {
+            'license_key': 'You should enter a license key',
+            'system_hash': 'System hash is required',
+            'account_trade_mode': 'Account trade mode is required',
+            'broker_server': 'Broker server information is required',
+            'timestamp': 'Timestamp is required',
+            'account_hash': 'Account hash is required'
+        }
+        
+        # Get the first error field and return appropriate message
+        for field, errors in serializer_errors.items():
+            if field in field_messages:
+                return field_messages[field]
+        
+        # Fallback message
+        return "Some required data is missing"
+    
     def post(self, request):
         """Validate trading bot license and return configuration"""
         try:
@@ -34,11 +53,8 @@ class BotValidationAPIView(APIView):
             if not serializer.is_valid():
                 return Response({
                     'success': False,
-                    'error': {
-                        'code': 'INVALID_REQUEST',
-                        'message': 'Invalid request data',
-                        'details': serializer.errors
-                    }
+                    'code': 'INVALID_REQUEST',
+                    'message': self.get_friendly_validation_message(serializer.errors)
                 }, status=status.HTTP_400_BAD_REQUEST)
             
             license_key = serializer.validated_data['license_key']
@@ -56,10 +72,8 @@ class BotValidationAPIView(APIView):
                 logger.warning(f"License not found: {license_key[:8]}...")
                 return Response({
                     'success': False,
-                    'error': {
-                        'code': 'INVALID_LICENSE',
-                        'message': 'Invalid license key'
-                    }
+                    'code': 'INVALID_LICENSE',
+                    'message': 'Invalid license key'
                 }, status=status.HTTP_401_UNAUTHORIZED)
             
             # Check if license is valid
@@ -77,10 +91,8 @@ class BotValidationAPIView(APIView):
                 logger.warning(f"License validation failed for {license_key[:8]}...: {error_message}")
                 return Response({
                     'success': False,
-                    'error': {
-                        'code': error_code,
-                        'message': error_message
-                    }
+                    'code': error_code,
+                    'message': error_message
                 }, status=status.HTTP_401_UNAUTHORIZED)
             
             # Validate system hash
@@ -89,10 +101,8 @@ class BotValidationAPIView(APIView):
                 logger.warning(f"System hash validation failed for {license_key[:8]}...: {system_message}")
                 return Response({
                     'success': False,
-                    'error': {
-                        'code': 'SYSTEM_MISMATCH',
-                        'message': system_message
-                    }
+                    'code': 'SYSTEM_MISMATCH',
+                    'message': system_message
                 }, status=status.HTTP_403_FORBIDDEN)
             
             # Check account trade mode compatibility
@@ -100,10 +110,8 @@ class BotValidationAPIView(APIView):
                 logger.warning(f"Account trade mode mismatch for {license_key[:8]}...")
                 return Response({
                     'success': False,
-                    'error': {
-                        'code': 'TRADE_MODE_MISMATCH',
-                        'message': f'Account trade mode mismatch. Expected {license_obj.account_trade_mode}, got {account_trade_mode}'
-                    }
+                    'code': 'TRADE_MODE_MISMATCH',
+                    'message': f'Account trade mode mismatch. Expected {license_obj.account_trade_mode}, got {account_trade_mode}'
                 }, status=status.HTTP_403_FORBIDDEN)
             
             # Bind account (internal tracking)
@@ -119,28 +127,23 @@ class BotValidationAPIView(APIView):
                 logger.error(f"No trading configuration assigned to license {license_key[:8]}...")
                 return Response({
                     'success': False,
-                    'error': {
-                        'code': 'NO_CONFIGURATION',
-                        'message': 'No trading configuration assigned to this license'
-                    }
+                    'code': 'NO_CONFIGURATION',
+                    'message': 'No trading configuration assigned to this license'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            # Serialize configuration
+            # Serialize configuration and flatten into response
             config_serializer = TradingConfigurationSerializer(license_obj.trading_configuration)
+            config_data = config_serializer.data
             
-            # Return success response
+            # Build flattened response with configuration fields at root level
             response_data = {
                 'success': True,
                 'message': 'License validated successfully',
-                'configuration': config_serializer.data,
                 'expires_at': license_obj.expires_at,
-                'license_info': {
-                    'usage_count': license_obj.usage_count,
-                    'daily_usage': license_obj.daily_usage_count,
-                    'first_time_use': license_obj.usage_count == 1,
-                    'account_login_changed': license_obj.account_hash_changes_count > 1
-                }
             }
+            
+            # Add all configuration fields to root level
+            response_data.update(config_data)
             
             logger.info(f"License validation successful for {license_key[:8]}...")
             return Response(response_data)
@@ -149,10 +152,8 @@ class BotValidationAPIView(APIView):
             logger.error(f"License validation error: {str(e)}", exc_info=True)
             return Response({
                 'success': False,
-                'error': {
-                    'code': 'INTERNAL_ERROR',
-                    'message': 'Internal server error during license validation'
-                }
+                'code': 'INTERNAL_ERROR',
+                'message': 'Internal server error during license validation'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class LicenseViewSet(viewsets.ModelViewSet):

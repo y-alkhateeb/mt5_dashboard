@@ -1,3 +1,5 @@
+# File: licenses/serializers.py
+
 from rest_framework import serializers
 from .models import Client, License
 
@@ -50,23 +52,7 @@ class BotValidationRequestSerializer(serializers.Serializer):
     # Account login hash (optional - for tracking login changes)
     account_hash = serializers.CharField(max_length=128, required=False, allow_blank=True, help_text="Hashed account login ID")
 
-class BotValidationResponseSerializer(serializers.Serializer):
-    """Serializer for bot validation response"""
-    success = serializers.BooleanField()
-    message = serializers.CharField()
-    license_key = serializers.CharField(required=False)
-    client_name = serializers.CharField(required=False)
-    
-    # If successful
-    configuration = serializers.DictField(required=False)
-    expires_at = serializers.DateTimeField(required=False)
-    account_trade_mode = serializers.IntegerField(required=False)
-    first_time_use = serializers.BooleanField(required=False)
-    account_login_changed = serializers.BooleanField(required=False)
-    
-    # Usage info
-    usage_count = serializers.IntegerField(required=False)
-    last_used_at = serializers.DateTimeField(required=False)
+# Note: BotValidationResponseSerializer removed since we now manually construct responses
 
 class BasicLicenseSerializer(serializers.ModelSerializer):
     """
