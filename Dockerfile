@@ -69,6 +69,14 @@ RUN mkdir -p logs staticfiles media && \
 # Create necessary directories
 RUN mkdir -p logs staticfiles media
 
+# Generate new migrations for the updated models
+RUN python manage.py makemigrations configurations --name remove_fibonacci_session_fields
+RUN python manage.py migrate
+
+# Optional: Show what migrations were created
+RUN python manage.py showmigrations
+
+
 # Set permissions for the app directory
 # Note: The chmod for docker-entrypoint.sh has been removed.
 RUN chown -R django:django /app
