@@ -61,7 +61,11 @@ python manage.py makemigrations configurations --name remove_fibonacci_session_f
     echo "⚠️  Migration generation failed, continuing with existing migrations"
 }
 
-# Mark existing migrations as applied if database already has the tables
+# Mark new migrations as applied since database already has correct structure
+echo "🔧 Marking new migrations as applied..."
+python manage.py migrate configurations --fake || true
+
+# Sync migration state with database
 echo "🔧 Syncing migration state with database..."
 python manage.py migrate --fake-initial || true
 
