@@ -57,7 +57,7 @@ except Exception as e:
 
 # Generate fresh migrations based on current model state
 echo "🔄 Generating fresh migrations for current model state..."
-python manage.py makemigrations configurations --name remove_fibonacci_session_fields || {
+python manage.py makemigrations configurations --name remove_fibonacci_session_fields --noinput || {
     echo "⚠️  Migration generation failed, continuing with existing migrations"
 }
 

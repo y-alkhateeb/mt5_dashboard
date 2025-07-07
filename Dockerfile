@@ -38,7 +38,7 @@ RUN rm -f configurations/migrations/0002_*.py && \
 ENV DJANGO_SETTINGS_MODULE=trading_admin.settings
 
 # Generate fresh migrations for the updated models
-RUN python manage.py makemigrations configurations --name remove_fibonacci_session_fields || echo "Migration generation skipped"
+RUN python manage.py makemigrations configurations --name remove_fibonacci_session_fields --noinput || echo "Migration generation skipped"
 
 # Production Stage
 FROM python:3.11.9-slim as production
