@@ -1,4 +1,5 @@
 <!-- File: templates/dashboard/index.html -->
+<!-- Updated to remove Fibonacci and Session configuration references -->
 {% extends 'base.html' %}
 
 {% block title %}Dashboard - Trading Robot Admin{% endblock %}
@@ -120,7 +121,7 @@
                                     <th>License Key</th>
                                     <th>Client</th>
                                     <th>Trade Mode</th>
-                                    <th>Broker Server</th>
+                                    <th>Symbol</th>
                                     <th>Status</th>
                                     <th>Expires</th>
                                     <th>Actions</th>
@@ -140,7 +141,13 @@
                                             {{ license.get_account_trade_mode_display }}
                                         </span>
                                     </td>
-                                    <td>{{ license.broker_server|default:"Not set" }}</td>
+                                    <td>
+                                        {% if license.trading_configuration %}
+                                            <span class="badge bg-secondary">{{ license.trading_configuration.allowed_symbol }}</span>
+                                        {% else %}
+                                            <span class="text-muted">No config</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if license.status == "Active" %}
                                             <span class="badge status-active">Active</span>

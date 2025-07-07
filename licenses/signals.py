@@ -1,3 +1,6 @@
+# File: licenses/signals.py
+# Updated to remove Fibonacci and Session configuration from default config
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import License
@@ -15,10 +18,8 @@ def ensure_license_has_configuration(sender, instance, created, **kwargs):
             name='Default Configuration',
             defaults={
                 'description': 'Default trading configuration for new licenses',
-                'inp_AllowedSymbol': 'US30',
-                'inp_StrictSymbolCheck': True,
-                'inp_SessionStart': '08:45',
-                'inp_SessionEnd': '10:00',
+                'allowed_symbol': 'US30',
+                'strict_symbol_check': True,
                 'is_active': True,
             }
         )

@@ -1,18 +1,16 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.core.exceptions import ValidationError
 
 class TradingConfiguration(models.Model):
     """
-    Trading Configuration with PostgreSQL-compatible field names
-    All field names are now lowercase/snake_case for PostgreSQL compatibility
+    Simplified Trading Configuration - Removed Fibonacci and Session Configuration
     """
     
     # Configuration Identity
     name = models.CharField(
         max_length=100,
         unique=True,
-        help_text="Configuration name (e.g., 'US30 Standard', 'EURUSD Aggressive')"
+        help_text="Configuration name (e.g., 'Standard Config', 'Aggressive Setup')"
     )
     description = models.TextField(
         blank=True,
@@ -28,102 +26,6 @@ class TradingConfiguration(models.Model):
     strict_symbol_check = models.BooleanField(
         default=True,
         help_text="Enable Strict Symbol Validation"
-    )
-    
-    # ═══ Session Configuration ═══
-    session_start = models.CharField(
-        max_length=5,
-        default="08:45",
-        help_text="Session Start Time (HH:MM format)"
-    )
-    session_end = models.CharField(
-        max_length=5,
-        default="10:00",
-        help_text="Session End Time (HH:MM format)"
-    )
-    
-    # ═══ Fibonacci Levels ═══
-    fib_session_high = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.0,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Session High"
-    )
-
-    fib_session_low = models.DecimalField(
-        max_digits=8, decimal_places=5, default=0.0,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Session Low"
-    )
-
-    fib_primary_buy_entry = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.05,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Primary Buy Entry"
-    )
-
-    fib_primary_buy_tp = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.325,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Primary Buy Take Profit (Buy TP)"
-    )
-
-    fib_primary_buy_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.05,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Primary Buy Stop Loss"
-    )
-    # Primary Sell Levels
-
-    fib_primary_sell_entry = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.05,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Primary Sell Entry"
-    )
-
-    fib_primary_sell_tp = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.325,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Primary Sell Take Profit (Sell TP)"
-    )
-    
-    fib_primary_sell_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.05,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Primary Sell Stop Loss"
-    )
-
-    # ═══ Hedging Levels ═══
-    fib_level_hedge_buy = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.05,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Buy Entry"
-    )
-    fib_level_hedge_sell = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.05,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Sell Entry"
-    )
-    fib_level_hedge_buy_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=0.0,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Buy Stop Loss"
-    )
-    fib_level_hedge_sell_sl = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.0,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Sell Stop Loss"
-    )
-    
-    fib_hedge_buy_tp = models.DecimalField(
-        max_digits=8, decimal_places=5, default=1.3,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Buy Take Profit"
-    )
-    
-    fib_hedge_sell_tp = models.DecimalField(
-        max_digits=8, decimal_places=5, default=-0.3,
-        validators=[MinValueValidator(-5.0), MaxValueValidator(5.0)],
-        help_text="Hedging Sell Take Profit"
     )
     
     # ═══ Timeout Configuration (Minutes) ═══
@@ -171,26 +73,7 @@ class TradingConfiguration(models.Model):
         """Get number of licenses using this configuration"""
         return self.licenses.count()
     
-    def clean(self):
-        """Validate session times"""
-        super().clean()
-        if not self._is_valid_time_format(self.session_start):
-            raise ValidationError({'session_start': 'Please enter time in HH:MM format'})
-        if not self._is_valid_time_format(self.session_end):
-            raise ValidationError({'session_end': 'Please enter time in HH:MM format'})
-    
-    def _is_valid_time_format(self, time_str):
-        """Check if time string is in HH:MM format"""
-        try:
-            parts = time_str.split(':')
-            if len(parts) != 2:
-                return False
-            hour, minute = int(parts[0]), int(parts[1])
-            return 0 <= hour <= 23 and 0 <= minute <= 59
-        except (ValueError, AttributeError):
-            return False
-    
-    # Compatibility properties for backward compatibility with API
+    # Compatibility properties for API (minimal required fields only)
     @property
     def inp_AllowedSymbol(self):
         return self.allowed_symbol
@@ -198,83 +81,3 @@ class TradingConfiguration(models.Model):
     @property
     def inp_StrictSymbolCheck(self):
         return self.strict_symbol_check
-    
-    @property
-    def inp_SessionStart(self):
-        return self.session_start
-    
-    @property
-    def inp_SessionEnd(self):
-        return self.session_end
-    
-    @property
-    def inp_FibLevel_1_1(self):
-        return self.fib_primary_buy_tp
-    
-    @property
-    def inp_FibLevel_1_05(self):
-        return self.fib_primary_buy_entry
-    
-    @property
-    def inp_FibLevel_1_0(self):
-        return self.fib_session_high
-    
-    @property
-    def inp_FibLevel_PrimaryBuySL(self):
-        return self.fib_primary_buy_sl
-    
-    @property
-    def inp_FibLevel_PrimarySellSL(self):
-        return self.fib_primary_sell_sl
-    
-    @property
-    def inp_FibLevel_HedgeBuy(self):
-        return self.fib_level_hedge_buy
-    
-    @property
-    def inp_FibLevel_HedgeSell(self):
-        return self.fib_level_hedge_sell
-    
-    @property
-    def inp_FibLevel_HedgeBuySL(self):
-        return self.fib_level_hedge_buy_sl
-    
-    @property
-    def inp_FibLevel_HedgeSellSL(self):
-        return self.fib_level_hedge_sell_sl
-    
-    @property
-    def inp_FibLevel_0_0(self):
-        return self.fib_session_low
-    
-    @property
-    def inp_FibLevel_Neg_05(self):
-        return self.fib_primary_sell_entry
-    
-    @property
-    def inp_FibLevel_Neg_1(self):
-        return self.fib_primary_sell_tp
-    
-    @property
-    def inp_FibLevel_HedgeBuyTP(self):
-        return self.fib_hedge_buy_tp
-    
-    @property
-    def inp_FibLevel_HedgeSellTP(self):
-        return self.fib_hedge_sell_tp
-    
-    @property
-    def inp_PrimaryPendingTimeout(self):
-        return self.primary_pending_timeout
-    
-    @property
-    def inp_PrimaryPositionTimeout(self):
-        return self.primary_position_timeout
-    
-    @property
-    def inp_HedgingPendingTimeout(self):
-        return self.hedging_pending_timeout
-    
-    @property
-    def inp_HedgingPositionTimeout(self):
-        return self.hedging_position_timeout

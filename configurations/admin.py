@@ -1,5 +1,5 @@
 # File: configurations/admin.py
-# Fixed for PostgreSQL field names
+# Simplified admin interface without Fibonacci and Session fields
 
 from django.contrib import admin
 from django.utils.html import format_html
@@ -9,8 +9,7 @@ from .models import TradingConfiguration
 @admin.register(TradingConfiguration)
 class TradingConfigurationAdmin(admin.ModelAdmin):
     list_display = [
-        'name', 'allowed_symbol', 'session_start', 'session_end', 
-        'license_count_display', 'is_active', 'updated_at'
+        'name', 'allowed_symbol', 'license_count_display', 'is_active', 'updated_at'
     ]
     list_filter = ['allowed_symbol', 'is_active', 'created_at']
     search_fields = ['name', 'description', 'allowed_symbol']
@@ -23,33 +22,7 @@ class TradingConfigurationAdmin(admin.ModelAdmin):
         
         ('═══ Symbol Validation ═══', {
             'fields': ('allowed_symbol', 'strict_symbol_check'),
-            'description': 'Configure symbol validation settings for MT5 robot'
-        }),
-        
-        ('═══ Session Configuration ═══', {
-            'fields': ('session_start', 'session_end'),
-            'description': 'Set trading session times (HH:MM format)'
-        }),
-        
-        ('═══ Fibonacci Levels ═══', {
-            'fields': (
-                ('fib_primary_buy_tp', 'fib_primary_buy_entry', 'fib_session_high'),
-                ('fib_primary_buy_sl', 'fib_primary_sell_sl'),
-                ('fib_level_hedge_buy', 'fib_level_hedge_sell'),
-                ('fib_level_hedge_buy_sl', 'fib_level_hedge_sell_sl'),
-                ('fib_session_low', 'fib_primary_sell_entry', 'fib_primary_sell_tp'),
-                ('fib_hedge_buy_tp', 'fib_hedge_sell_tp'),
-            ),
-            'description': 'Configure Fibonacci retracement levels for trading strategy',
-            'classes': ('collapse',)
-        }),
-        
-        ('═══ Timeout Configuration (Minutes) ═══', {
-            'fields': (
-                ('primary_pending_timeout', 'primary_position_timeout'),
-                ('hedging_pending_timeout', 'hedging_position_timeout'),
-            ),
-            'description': 'Set timeout values in minutes for different order types'
+            'description': 'Configure symbol validation settings for MT5 EA'
         }),
         
         ('Usage Information', {
